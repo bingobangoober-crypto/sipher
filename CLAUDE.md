@@ -43,28 +43,17 @@
 
 ---
 
-## WHAT SIPHER DOES
-
-Any autonomous agent (OpenClaw, Claude Code, LangChain, etc.) can call Sipher to:
-
-1. **Generate stealth addresses** — one-time recipient addresses (unlinkable)
-2. **Create shielded transfers** — hide sender, amount, recipient via Pedersen commitments
-3. **Scan for payments** — detect incoming shielded payments using viewing keys
-4. **Selective disclosure** — share viewing keys with auditors for compliance
-
-All powered by SIP Protocol's mainnet-deployed Anchor program (`S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at`).
-
----
-
 ## TECH STACK
 
-- **Runtime:** Node.js 22+ (LTS)
-- **Framework:** Hono (lightweight, edge-ready)
+- **Runtime:** Node.js 22 (LTS)
+- **Framework:** Express 5
 - **Language:** TypeScript (strict)
-- **Core:** @sip-protocol/sdk (stealth addresses, commitments, encryption)
-- **Solana:** @solana/kit (transactions, RPC)
-- **Testing:** Vitest
-- **Deployment:** Docker + GHCR → VPS (port TBD)
+- **Core:** @sip-protocol/sdk v0.7.3 (stealth addresses, commitments, encryption)
+- **Solana:** @solana/web3.js v1 (transactions, RPC)
+- **Validation:** Zod v3
+- **Logging:** Pino v9
+- **Testing:** Vitest + Supertest (39 tests)
+- **Deployment:** Docker + GHCR → VPS (port 5006)
 - **Domain:** sipher.sip-protocol.org
 
 ---
@@ -73,9 +62,9 @@ All powered by SIP Protocol's mainnet-deployed Anchor program (`S1PMFspo4W6BYKHW
 
 ```bash
 pnpm install                    # Install dependencies
-pnpm dev                        # Dev server
+pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests
+pnpm test -- --run              # Run tests (39 tests)
 pnpm typecheck                  # Type check
 ```
 
@@ -86,36 +75,69 @@ pnpm typecheck                  # Type check
 ```
 sipher/
 ├── src/
-│   ├── index.ts                # Entry point, Hono app
-│   ├── routes/                 # API route handlers
-│   │   ├── stealth.ts          # Stealth address endpoints
-│   │   ├── transfer.ts         # Shielded transfer endpoints
-│   │   ├── scan.ts             # Payment scanning endpoints
-│   │   └── health.ts           # Health check
-│   ├── services/               # Business logic
-│   │   ├── privacy.ts          # SIP SDK wrapper
-│   │   └── solana.ts           # Solana transaction building
-│   └── middleware/             # Auth, rate limiting, logging
-├── skill.md                    # OpenClaw-compatible skill file
-├── Dockerfile                  # Production container
-├── docker-compose.yml          # Deployment config
-└── tests/                      # Test suites
+│   ├── server.ts                   # Express app + middleware stack
+│   ├── config.ts                   # envalid env validation
+│   ├── logger.ts                   # pino structured logger
+│   ├── shutdown.ts                 # Graceful shutdown
+│   ├── middleware/
+│   │   ├── auth.ts                 # X-API-Key (timing-safe)
+│   │   ├── cors.ts                 # Helmet + CORS
+│   │   ├── rate-limit.ts           # express-rate-limit (memory)
+│   │   ├── validation.ts           # Zod + validateRequest
+│   │   ├── error-handler.ts        # Global error + 404
+│   │   ├── request-id.ts           # X-Request-Id correlation
+│   │   └── index.ts                # Barrel exports
+│   ├── routes/
+│   │   ├── health.ts               # GET /v1/health
+│   │   ├── stealth.ts              # generate, derive, check
+│   │   ├── transfer.ts             # shield, claim
+│   │   ├── scan.ts                 # payments
+│   │   ├── commitment.ts           # create, verify
+│   │   ├── viewing-key.ts          # generate, disclose
+│   │   └── index.ts                # Route aggregator
+│   ├── services/
+│   │   ├── solana.ts               # Connection manager
+│   │   └── transaction-builder.ts  # Unsigned tx serialization
+│   └── types/
+│       └── api.ts                  # ApiResponse<T>, HealthResponse
+├── skill.md                        # OpenClaw skill file (GET /skill.md)
+├── tests/                          # 39 tests across 5 suites
+│   ├── health.test.ts              # 7 tests
+│   ├── stealth.test.ts             # 10 tests
+│   ├── commitment.test.ts          # 11 tests
+│   ├── viewing-key.test.ts         # 6 tests
+│   └── middleware.test.ts          # 5 tests
+├── Dockerfile                      # Multi-stage Alpine
+├── docker-compose.yml              # name: sipher, port 5006
+├── .github/workflows/deploy.yml    # GHCR → VPS
+├── .env.example
+├── package.json
+├── tsconfig.json
+├── tsup.config.ts
+└── vitest.config.ts
 ```
 
 ---
 
-## KEY ENDPOINTS
+## API ENDPOINTS (13 endpoints)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Service info + docs |
-| GET | `/skill.md` | OpenClaw skill file |
-| GET | `/health` | Health check |
-| POST | `/v1/stealth/generate` | Generate stealth address |
-| POST | `/v1/stealth/derive` | Derive stealth address from meta-address |
-| POST | `/v1/transfer/shield` | Create shielded transfer |
-| POST | `/v1/scan/payments` | Scan for incoming payments |
-| POST | `/v1/disclose` | Generate viewing key disclosure |
+All return `ApiResponse<T>`: `{ success, data?, error? }`
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET | `/` | Service info + endpoint directory | No |
+| GET | `/skill.md` | OpenClaw skill file | No |
+| GET | `/v1/health` | Health + Solana connection status | No |
+| POST | `/v1/stealth/generate` | Generate stealth meta-address keypair | Yes |
+| POST | `/v1/stealth/derive` | Derive one-time stealth address | Yes |
+| POST | `/v1/stealth/check` | Check stealth address ownership | Yes |
+| POST | `/v1/transfer/shield` | Build unsigned shielded transfer (SOL/SPL) | Yes |
+| POST | `/v1/transfer/claim` | Build signed claim tx (stealth key derived server-side) | Yes |
+| POST | `/v1/scan/payments` | Scan for incoming stealth payments | Yes |
+| POST | `/v1/commitment/create` | Create Pedersen commitment | Yes |
+| POST | `/v1/commitment/verify` | Verify commitment opening | Yes |
+| POST | `/v1/viewing-key/generate` | Generate viewing key | Yes |
+| POST | `/v1/viewing-key/disclose` | Encrypt tx data for auditor | Yes |
 
 ---
 
@@ -124,9 +146,9 @@ sipher/
 | Field | Value |
 |-------|-------|
 | **User** | sipher |
-| **Port** | TBD (reserve in ~/.ssh/vps-port-registry.md) |
+| **Port** | 5006 |
 | **Domain** | sipher.sip-protocol.org |
-| **Container** | sip-sipher |
+| **Container** | sipher |
 | **SSH** | `ssh sipher` |
 
 ---
@@ -136,16 +158,16 @@ sipher/
 ### DO:
 - Run `pnpm test -- --run` after code changes
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
-- Keep API responses consistent and well-documented
+- Keep API responses consistent: `{ success, data?, error? }`
 - Reference ecosystem CLAUDE.md for shared standards
 
 ### DON'T:
 - Commit credentials or API keys
-- Expose private keys through the API
+- Expose private keys through the API (exception: claim endpoint derives stealth key)
 - Skip input validation on public endpoints
 - Break compatibility with OpenClaw skill format
 
 ---
 
-**Last Updated:** 2026-02-03
-**Status:** Hackathon Build Phase | Agent #274 Active
+**Last Updated:** 2026-02-04
+**Status:** Hackathon Build Complete | Agent #274 Active | 39 Tests Passing
