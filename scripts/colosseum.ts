@@ -442,11 +442,13 @@ async function cmdHeartbeat(): Promise<void> {
   console.log(`Kill with: kill ${process.pid}`)
   console.log(`${'='.repeat(40)}\n`)
 
-  // graceful shutdown
+  // graceful shutdown via AbortController (no listener accumulation)
   let stopping = false
+  const ac = new AbortController()
   const shutdown = () => {
     if (stopping) return
     stopping = true
+    ac.abort()
     console.log(`\n[${ts()}] Heartbeat stopping (${cycleCount} cycles, uptime ${formatUptime(startTime)})`)
     process.exit(0)
   }
@@ -461,7 +463,7 @@ async function cmdHeartbeat(): Promise<void> {
     }
 
     cycleCount++
-    console.log(`\n[${ ts()}] === Heartbeat Cycle #${cycleCount} === (uptime ${formatUptime(startTime)}, ${timeUntilEnd()} remaining)`)
+    console.log(`\n[${ts()}] === Heartbeat Cycle #${cycleCount} === (uptime ${formatUptime(startTime)}, ${timeUntilEnd()} remaining)`)
 
     try {
       // 1. Check skill file version
@@ -494,12 +496,11 @@ async function cmdHeartbeat(): Promise<void> {
     }
 
     console.log(`[${ts()}] Next cycle in ${intervalMin} min...`)
-    // sleep with early exit on shutdown
+    // sleep with abort signal (no listener accumulation)
     await new Promise<void>(resolve => {
+      if (ac.signal.aborted) { resolve(); return }
       const timer = setTimeout(resolve, HEARTBEAT_INTERVAL_MS)
-      const onStop = () => { clearTimeout(timer); resolve() }
-      process.once('SIGINT', onStop)
-      process.once('SIGTERM', onStop)
+      ac.signal.addEventListener('abort', () => { clearTimeout(timer); resolve() }, { once: true })
     })
   }
 }

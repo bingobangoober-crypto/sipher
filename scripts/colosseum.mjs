@@ -315,9 +315,11 @@ async function cmdHeartbeat() {
   console.log(`${"=".repeat(40)}
 `);
   let stopping = false;
+  const ac = new AbortController();
   const shutdown = () => {
     if (stopping) return;
     stopping = true;
+    ac.abort();
     console.log(`
 [${ts()}] Heartbeat stopping (${cycleCount} cycles, uptime ${formatUptime(startTime)})`);
     process.exit(0);
@@ -357,13 +359,15 @@ async function cmdHeartbeat() {
     }
     console.log(`[${ts()}] Next cycle in ${intervalMin} min...`);
     await new Promise((resolve2) => {
+      if (ac.signal.aborted) {
+        resolve2();
+        return;
+      }
       const timer = setTimeout(resolve2, HEARTBEAT_INTERVAL_MS);
-      const onStop = () => {
+      ac.signal.addEventListener("abort", () => {
         clearTimeout(timer);
         resolve2();
-      };
-      process.once("SIGINT", onStop);
-      process.once("SIGTERM", onStop);
+      }, { once: true });
     });
   }
 }
