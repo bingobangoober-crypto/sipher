@@ -92,6 +92,8 @@ app.get('/', (_req, res) => {
       },
       viewingKey: {
         generate: 'POST /v1/viewing-key/generate',
+        derive: 'POST /v1/viewing-key/derive',
+        verifyHierarchy: 'POST /v1/viewing-key/verify-hierarchy',
         disclose: 'POST /v1/viewing-key/disclose',
         decrypt: 'POST /v1/viewing-key/decrypt',
       },

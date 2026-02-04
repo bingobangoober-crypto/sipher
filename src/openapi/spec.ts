@@ -1019,6 +1019,113 @@ export const openApiSpec = {
       },
     },
 
+    '/v1/viewing-key/derive': {
+      post: {
+        summary: 'Derive child viewing key (BIP32-style)',
+        description: 'Derives a child viewing key from a master key using HMAC-SHA512. Supports hierarchical key trees for scoped compliance access (per-auditor, per-timeframe).',
+        tags: ['Viewing Key'],
+        operationId: 'viewingKeyDerive',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  masterKey: { $ref: '#/components/schemas/ViewingKey' },
+                  childPath: { type: 'string', description: 'Derivation path segment (e.g., "audit", "2026/Q1")', minLength: 1 },
+                },
+                required: ['masterKey', 'childPath'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Derived child viewing key',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        key: hexString32,
+                        path: { type: 'string' },
+                        hash: hexString32,
+                        derivedFrom: {
+                          type: 'object',
+                          properties: {
+                            parentHash: hexString32,
+                            parentPath: { type: 'string' },
+                            childPath: { type: 'string' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/viewing-key/verify-hierarchy': {
+      post: {
+        summary: 'Verify viewing key parent-child relationship',
+        description: 'Verifies that a child viewing key was derived from a specific parent key at a given path.',
+        tags: ['Viewing Key'],
+        operationId: 'viewingKeyVerifyHierarchy',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  parentKey: { $ref: '#/components/schemas/ViewingKey' },
+                  childKey: { $ref: '#/components/schemas/ViewingKey' },
+                  childPath: { type: 'string', minLength: 1 },
+                },
+                required: ['parentKey', 'childKey', 'childPath'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Hierarchy verification result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        valid: { type: 'boolean' },
+                        expectedPath: { type: 'string' },
+                        actualPath: { type: 'string' },
+                        parentHash: hexString32,
+                        childHash: hexString32,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
     '/v1/viewing-key/disclose': {
       post: {
         summary: 'Encrypt transaction for disclosure',

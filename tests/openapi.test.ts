@@ -45,6 +45,8 @@ describe('OpenAPI specification', () => {
       '/v1/commitment/subtract',
       '/v1/commitment/create/batch',
       '/v1/viewing-key/generate',
+      '/v1/viewing-key/derive',
+      '/v1/viewing-key/verify-hierarchy',
       '/v1/viewing-key/disclose',
       '/v1/viewing-key/decrypt',
       '/v1/privacy/score',
