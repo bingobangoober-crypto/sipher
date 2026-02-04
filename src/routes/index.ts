@@ -8,6 +8,7 @@ import viewingKeyRouter from './viewing-key.js'
 import errorsRouter from './errors.js'
 import privacyRouter from './privacy.js'
 import rpcRouter from './rpc.js'
+import proofsRouter from './proofs.js'
 
 const router = Router()
 
@@ -20,5 +21,6 @@ router.use(viewingKeyRouter)
 router.use(errorsRouter)
 router.use(privacyRouter)
 router.use(rpcRouter)
+router.use(proofsRouter)
 
 export default router

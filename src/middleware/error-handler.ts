@@ -28,6 +28,19 @@ export function errorHandler(
     return
   }
 
+  // Handle SIP SDK ProofGenerationError
+  if (err.name === 'ProofGenerationError') {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: ErrorCode.PROOF_GENERATION_FAILED,
+        message: err.message,
+        details: { proofType: (err as any).proofType },
+      },
+    })
+    return
+  }
+
   // Handle SIP SDK ValidationError
   if (err.name === 'ValidationError' || (err as any).code?.startsWith?.('VALIDATION')) {
     res.status(400).json({

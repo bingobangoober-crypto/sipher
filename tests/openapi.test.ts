@@ -51,6 +51,12 @@ describe('OpenAPI specification', () => {
       '/v1/viewing-key/decrypt',
       '/v1/privacy/score',
       '/v1/rpc/providers',
+      '/v1/proofs/funding/generate',
+      '/v1/proofs/funding/verify',
+      '/v1/proofs/validity/generate',
+      '/v1/proofs/validity/verify',
+      '/v1/proofs/fulfillment/generate',
+      '/v1/proofs/fulfillment/verify',
     ]
 
     for (const path of expectedPaths) {
@@ -79,6 +85,7 @@ describe('OpenAPI specification', () => {
     expect(tagNames).toContain('Scan')
     expect(tagNames).toContain('Commitment')
     expect(tagNames).toContain('Viewing Key')
+    expect(tagNames).toContain('Proofs')
   })
 })
 

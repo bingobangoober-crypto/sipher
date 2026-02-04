@@ -35,6 +35,10 @@ export enum ErrorCode {
   BATCH_LIMIT_EXCEEDED = 'BATCH_LIMIT_EXCEEDED',
   BATCH_EMPTY = 'BATCH_EMPTY',
 
+  // 400 — Proof errors
+  PROOF_GENERATION_FAILED = 'PROOF_GENERATION_FAILED',
+  PROOF_VERIFICATION_FAILED = 'PROOF_VERIFICATION_FAILED',
+
   // 500 — Privacy scoring
   PRIVACY_SCORE_FAILED = 'PRIVACY_SCORE_FAILED',
 
@@ -180,6 +184,20 @@ export const ERROR_CATALOG: ErrorCatalogEntry[] = [
     code: ErrorCode.BATCH_EMPTY,
     httpStatus: 422,
     description: 'Batch request must contain at least one item.',
+    retryable: false,
+  },
+
+  // 400 — Proof errors
+  {
+    code: ErrorCode.PROOF_GENERATION_FAILED,
+    httpStatus: 400,
+    description: 'ZK proof generation failed. Check input parameters (e.g., balance < minimum, expired intent).',
+    retryable: false,
+  },
+  {
+    code: ErrorCode.PROOF_VERIFICATION_FAILED,
+    httpStatus: 400,
+    description: 'ZK proof verification failed. The proof may be invalid or tampered.',
     retryable: false,
   },
 

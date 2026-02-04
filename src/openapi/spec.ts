@@ -1361,6 +1361,332 @@ export const openApiSpec = {
         },
       },
     },
+
+    // ─── Proofs ───────────────────────────────────────────────────────────────
+    '/v1/proofs/funding/generate': {
+      post: {
+        summary: 'Generate funding proof',
+        description: 'Generates a ZK proof that balance >= minimumRequired without revealing the balance.',
+        tags: ['Proofs'],
+        operationId: 'proofsFundingGenerate',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  balance: { type: 'string', pattern: '^[0-9]+$', description: 'User balance (private)' },
+                  minimumRequired: { type: 'string', pattern: '^[0-9]+$', description: 'Minimum required amount (public)' },
+                  blindingFactor: hexString32,
+                  assetId: { type: 'string', description: 'Asset identifier (e.g., SOL)' },
+                  userAddress: { type: 'string', description: 'User address for ownership proof' },
+                  ownershipSignature: { type: 'string', pattern: '^0x[0-9a-fA-F]+$', description: 'Signature proving address ownership' },
+                },
+                required: ['balance', 'minimumRequired', 'blindingFactor', 'assetId', 'userAddress', 'ownershipSignature'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Proof generated',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        proof: {
+                          type: 'object',
+                          properties: {
+                            type: { type: 'string', enum: ['funding'] },
+                            proof: { type: 'string' },
+                            publicInputs: { type: 'array', items: { type: 'string' } },
+                          },
+                        },
+                        publicInputs: { type: 'array', items: { type: 'string' } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation or proof generation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/proofs/funding/verify': {
+      post: {
+        summary: 'Verify funding proof',
+        description: 'Verifies a previously generated funding proof.',
+        tags: ['Proofs'],
+        operationId: 'proofsFundingVerify',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', enum: ['funding'] },
+                  proof: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                  publicInputs: { type: 'array', items: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' } },
+                },
+                required: ['type', 'proof', 'publicInputs'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Verification result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: { valid: { type: 'boolean' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/proofs/validity/generate': {
+      post: {
+        summary: 'Generate validity proof',
+        description: 'Generates a ZK proof that an intent is authorized by the sender without revealing the sender.',
+        tags: ['Proofs'],
+        operationId: 'proofsValidityGenerate',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  intentHash: hexString32,
+                  senderAddress: { type: 'string' },
+                  senderBlinding: hexString32,
+                  senderSecret: hexString32,
+                  authorizationSignature: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                  nonce: hexString32,
+                  timestamp: { type: 'integer' },
+                  expiry: { type: 'integer' },
+                },
+                required: ['intentHash', 'senderAddress', 'senderBlinding', 'senderSecret', 'authorizationSignature', 'nonce', 'timestamp', 'expiry'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Proof generated',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        proof: {
+                          type: 'object',
+                          properties: {
+                            type: { type: 'string', enum: ['validity'] },
+                            proof: { type: 'string' },
+                            publicInputs: { type: 'array', items: { type: 'string' } },
+                          },
+                        },
+                        publicInputs: { type: 'array', items: { type: 'string' } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation or proof generation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/proofs/validity/verify': {
+      post: {
+        summary: 'Verify validity proof',
+        description: 'Verifies a previously generated validity proof.',
+        tags: ['Proofs'],
+        operationId: 'proofsValidityVerify',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', enum: ['validity'] },
+                  proof: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                  publicInputs: { type: 'array', items: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' } },
+                },
+                required: ['type', 'proof', 'publicInputs'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Verification result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: { valid: { type: 'boolean' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/proofs/fulfillment/generate': {
+      post: {
+        summary: 'Generate fulfillment proof',
+        description: 'Generates a ZK proof that the solver delivered output >= minimum to the correct recipient.',
+        tags: ['Proofs'],
+        operationId: 'proofsFulfillmentGenerate',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  intentHash: hexString32,
+                  outputAmount: { type: 'string', pattern: '^[0-9]+$' },
+                  outputBlinding: hexString32,
+                  minOutputAmount: { type: 'string', pattern: '^[0-9]+$' },
+                  recipientStealth: hexString32,
+                  solverId: { type: 'string' },
+                  solverSecret: hexString32,
+                  oracleAttestation: {
+                    type: 'object',
+                    properties: {
+                      recipient: hexString32,
+                      amount: { type: 'string', pattern: '^[0-9]+$' },
+                      txHash: hexString32,
+                      blockNumber: { type: 'string', pattern: '^[0-9]+$' },
+                      signature: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                    },
+                    required: ['recipient', 'amount', 'txHash', 'blockNumber', 'signature'],
+                  },
+                  fulfillmentTime: { type: 'integer' },
+                  expiry: { type: 'integer' },
+                },
+                required: ['intentHash', 'outputAmount', 'outputBlinding', 'minOutputAmount', 'recipientStealth', 'solverId', 'solverSecret', 'oracleAttestation', 'fulfillmentTime', 'expiry'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Proof generated',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        proof: {
+                          type: 'object',
+                          properties: {
+                            type: { type: 'string', enum: ['fulfillment'] },
+                            proof: { type: 'string' },
+                            publicInputs: { type: 'array', items: { type: 'string' } },
+                          },
+                        },
+                        publicInputs: { type: 'array', items: { type: 'string' } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation or proof generation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/proofs/fulfillment/verify': {
+      post: {
+        summary: 'Verify fulfillment proof',
+        description: 'Verifies a previously generated fulfillment proof.',
+        tags: ['Proofs'],
+        operationId: 'proofsFulfillmentVerify',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', enum: ['fulfillment'] },
+                  proof: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                  publicInputs: { type: 'array', items: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' } },
+                },
+                required: ['type', 'proof', 'publicInputs'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Verification result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: { valid: { type: 'boolean' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
   },
   tags: [
     { name: 'Health', description: 'Server health, readiness, and error catalog' },
@@ -1371,5 +1697,6 @@ export const openApiSpec = {
     { name: 'Viewing Key', description: 'Viewing key generation, encryption for disclosure, and decryption' },
     { name: 'Privacy', description: 'Wallet privacy analysis and surveillance scoring' },
     { name: 'RPC', description: 'RPC provider configuration and status' },
+    { name: 'Proofs', description: 'ZK proof generation and verification (funding, validity, fulfillment)' },
   ],
 }

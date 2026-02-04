@@ -103,6 +103,14 @@ app.get('/', (_req, res) => {
       rpc: {
         providers: 'GET /v1/rpc/providers',
       },
+      proofs: {
+        fundingGenerate: 'POST /v1/proofs/funding/generate',
+        fundingVerify: 'POST /v1/proofs/funding/verify',
+        validityGenerate: 'POST /v1/proofs/validity/generate',
+        validityVerify: 'POST /v1/proofs/validity/verify',
+        fulfillmentGenerate: 'POST /v1/proofs/fulfillment/generate',
+        fulfillmentVerify: 'POST /v1/proofs/fulfillment/verify',
+      },
     },
     security: {
       authentication: isAuthEnabled() ? 'enabled' : 'disabled',
