@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { commit, verifyOpening, addCommitments, subtractCommitments, addBlindings, subtractBlindings } from '@sip-protocol/sdk'
 import type { HexString } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
+import { idempotency } from '../middleware/idempotency.js'
 import { hexToBytes } from '@noble/hashes/utils'
 
 const router = Router()
@@ -24,6 +25,7 @@ const verifySchema = z.object({
 
 router.post(
   '/commitment/create',
+  idempotency,
   validateRequest({ body: createSchema }),
   (req: Request, res: Response, next: NextFunction) => {
     try {

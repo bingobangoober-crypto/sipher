@@ -8,6 +8,7 @@ import {
 import type { ViewingKey, TransactionData } from '@sip-protocol/sdk'
 import type { EncryptedTransaction } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
+import { idempotency } from '../middleware/idempotency.js'
 
 const router = Router()
 
@@ -59,6 +60,7 @@ router.post(
 
 router.post(
   '/viewing-key/disclose',
+  idempotency,
   validateRequest({ body: discloseSchema }),
   (req: Request, res: Response, next: NextFunction) => {
     try {

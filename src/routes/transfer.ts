@@ -9,6 +9,7 @@ import {
 import { commit } from '@sip-protocol/sdk'
 import type { StealthMetaAddress, StealthAddress, HexString } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
+import { idempotency } from '../middleware/idempotency.js'
 import { buildShieldedSolTransfer, buildShieldedSplTransfer } from '../services/transaction-builder.js'
 import { getConnection } from '../services/solana.js'
 import { sha256 } from '@noble/hashes/sha256'
@@ -48,6 +49,7 @@ const claimSchema = z.object({
 
 router.post(
   '/transfer/shield',
+  idempotency,
   validateRequest({ body: shieldSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -110,6 +112,7 @@ router.post(
 
 router.post(
   '/transfer/claim',
+  idempotency,
   validateRequest({ body: claimSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
