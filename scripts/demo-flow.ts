@@ -229,10 +229,50 @@ async function main() {
   console.log(`Replayed: ${replayed}`)
   console.log(`Same response: ${firstData.data.commitment === secondData.data.commitment}`)
 
+  // ─── Step 10: Batch stealth generation ────────────────────────
+  section('10. Batch Stealth Generation')
+  const batch = await api<any>('/v1/stealth/generate/batch', { count: 3, label: 'Fleet' })
+  console.log(`Generated: ${batch.summary.succeeded}/${batch.summary.total} keypairs`)
+  for (const item of batch.results) {
+    console.log(`  [${item.index}] ${item.data.metaAddress.spendingKey.slice(0, 20)}...`)
+  }
+
+  // ─── Step 11: Batch commitment creation ──────────────────────
+  section('11. Batch Commitment Creation')
+  const batchCommit = await api<any>('/v1/commitment/create/batch', {
+    items: [
+      { value: '100000000' },
+      { value: '200000000' },
+      { value: '300000000' },
+    ],
+  })
+  console.log(`Created: ${batchCommit.summary.succeeded}/${batchCommit.summary.total} commitments`)
+  for (const item of batchCommit.results) {
+    console.log(`  [${item.index}] ${item.data.commitment.slice(0, 20)}...`)
+  }
+
+  // ─── Step 12: Privacy score ──────────────────────────────────
+  section('12. Privacy Score Analysis')
+  const score = await api<any>('/v1/privacy/score', {
+    address: sender,
+    limit: 10,
+  })
+  console.log(`Address: ${score.address}`)
+  console.log(`Score:   ${score.score}/100 (${score.grade})`)
+  console.log(`Analyzed: ${score.transactionsAnalyzed} transactions`)
+  console.log(`Factors:`)
+  for (const [name, factor] of Object.entries(score.factors) as [string, any][]) {
+    console.log(`  ${name}: ${factor.score}/100 — ${factor.detail}`)
+  }
+  console.log(`Recommendations:`)
+  for (const rec of score.recommendations) {
+    console.log(`  → ${rec}`)
+  }
+
   // ─── Done ──────────────────────────────────────────────────────
   section('Demo Complete')
   console.log('All steps executed successfully.')
-  console.log('Endpoints demonstrated: 15')
+  console.log('Endpoints demonstrated: 21')
   console.log('')
   console.log('In production, the transfer/shield transaction would be')
   console.log('signed by the sender\'s wallet and submitted to Solana.')

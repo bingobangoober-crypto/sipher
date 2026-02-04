@@ -276,6 +276,66 @@ Returns decrypted transaction data: `sender`, `recipient`, `amount`, `timestamp`
 
 ---
 
+### Batch Operations
+
+Process multiple operations in a single call (max 100 per request).
+
+#### Batch Generate Stealth Keypairs
+
+```
+POST /v1/stealth/generate/batch
+Content-Type: application/json
+
+{ "count": 10, "label": "Fleet" }
+```
+
+Returns per-item results with `summary: { total, succeeded, failed }`.
+
+#### Batch Create Commitments
+
+```
+POST /v1/commitment/create/batch
+Content-Type: application/json
+
+{
+  "items": [
+    { "value": "1000000000" },
+    { "value": "2000000000" }
+  ]
+}
+```
+
+#### Batch Scan Payments
+
+```
+POST /v1/scan/payments/batch
+Content-Type: application/json
+
+{
+  "keyPairs": [
+    { "viewingPrivateKey": "0x...", "spendingPublicKey": "0x...", "label": "Wallet A" },
+    { "viewingPrivateKey": "0x...", "spendingPublicKey": "0x...", "label": "Wallet B" }
+  ]
+}
+```
+
+---
+
+### Privacy Score
+
+Analyze any Solana wallet's on-chain privacy posture.
+
+```
+POST /v1/privacy/score
+Content-Type: application/json
+
+{ "address": "<base58 Solana address>", "limit": 100 }
+```
+
+Returns: `score` (0-100), `grade` (A-F), `factors` (addressReuse, amountPatterns, timingCorrelation, counterpartyExposure), and `recommendations` with specific Sipher endpoints to improve privacy.
+
+---
+
 ## Idempotency
 
 Mutation endpoints (`/transfer/shield`, `/transfer/claim`, `/commitment/create`, `/viewing-key/disclose`) support the `Idempotency-Key` header. Send a UUID v4 value to safely retry requests — duplicate keys return the cached response with `Idempotency-Replayed: true` header.

@@ -34,16 +34,20 @@ describe('OpenAPI specification', () => {
       '/v1/stealth/generate',
       '/v1/stealth/derive',
       '/v1/stealth/check',
+      '/v1/stealth/generate/batch',
       '/v1/transfer/shield',
       '/v1/transfer/claim',
       '/v1/scan/payments',
+      '/v1/scan/payments/batch',
       '/v1/commitment/create',
       '/v1/commitment/verify',
       '/v1/commitment/add',
       '/v1/commitment/subtract',
+      '/v1/commitment/create/batch',
       '/v1/viewing-key/generate',
       '/v1/viewing-key/disclose',
       '/v1/viewing-key/decrypt',
+      '/v1/privacy/score',
     ]
 
     for (const path of expectedPaths) {

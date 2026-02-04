@@ -54,7 +54,7 @@
 - **Logging:** Pino v9 (structured JSON, audit logs)
 - **Docs:** swagger-ui-express (OpenAPI 3.1)
 - **Caching:** lru-cache (idempotency store, 10K entries, 24h TTL)
-- **Testing:** Vitest + Supertest (115 tests)
+- **Testing:** Vitest + Supertest (140 tests)
 - **Deployment:** Docker + GHCR → VPS (port 5006)
 - **Domain:** sipher.sip-protocol.org
 
@@ -66,7 +66,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (115 tests)
+pnpm test -- --run              # Run tests (140 tests)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 pnpm colosseum heartbeat        # Autonomous loop (engage every 30 min)
@@ -105,11 +105,12 @@ sipher/
 │   ├── routes/
 │   │   ├── health.ts               # GET /v1/health (extended), GET /v1/ready
 │   │   ├── errors.ts               # GET /v1/errors (error catalog)
-│   │   ├── stealth.ts              # generate, derive, check
+│   │   ├── stealth.ts              # generate, derive, check, generate/batch
 │   │   ├── transfer.ts             # shield, claim (+ idempotency)
-│   │   ├── scan.ts                 # payments
-│   │   ├── commitment.ts           # create (+ idempotency), verify, add, subtract
+│   │   ├── scan.ts                 # payments, payments/batch
+│   │   ├── commitment.ts           # create (+ idempotency), verify, add, subtract, create/batch
 │   │   ├── viewing-key.ts          # generate, disclose (+ idempotency), decrypt
+│   │   ├── privacy.ts              # score (surveillance/privacy analysis)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
 │   │   ├── solana.ts               # Connection manager + RPC latency measurement
@@ -119,9 +120,9 @@ sipher/
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
 ├── scripts/
 │   ├── colosseum.ts                # Hackathon engagement automation
-│   └── demo-flow.ts                # Full E2E demo (15 endpoints)
-├── tests/                          # 115 tests across 12 suites
-│   ├── health.test.ts              # 10 tests (health + ready + root + skill + 404 + reqId)
+│   └── demo-flow.ts                # Full E2E demo (21 endpoints)
+├── tests/                          # 140 tests across 14 suites
+│   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
 │   ├── transfer-shield.test.ts     # 12 tests
@@ -132,7 +133,9 @@ sipher/
 │   ├── error-codes.test.ts         # 10 tests (enum, catalog, error-handler integration)
 │   ├── openapi.test.ts             # 6 tests (spec validity, paths, auth, tags)
 │   ├── audit-log.test.ts           # 8 tests (redaction, integration)
-│   └── idempotency.test.ts         # 8 tests (cache, replay, validation)
+│   ├── idempotency.test.ts         # 8 tests (cache, replay, validation)
+│   ├── batch.test.ts               # 15 tests (stealth, commitment, scan batch ops)
+│   └── privacy-score.test.ts       # 10 tests (scoring, factors, validation)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -145,7 +148,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (19 endpoints)
+## API ENDPOINTS (23 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -161,16 +164,20 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | POST | `/v1/stealth/generate` | Generate stealth meta-address keypair | Yes | — |
 | POST | `/v1/stealth/derive` | Derive one-time stealth address | Yes | — |
 | POST | `/v1/stealth/check` | Check stealth address ownership | Yes | — |
+| POST | `/v1/stealth/generate/batch` | Batch generate stealth keypairs (max 100) | Yes | — |
 | POST | `/v1/transfer/shield` | Build unsigned shielded transfer (SOL/SPL) | Yes | ✓ |
 | POST | `/v1/transfer/claim` | Build signed claim tx (stealth key derived server-side) | Yes | ✓ |
 | POST | `/v1/scan/payments` | Scan for incoming stealth payments | Yes | — |
+| POST | `/v1/scan/payments/batch` | Batch scan across multiple key pairs (max 100) | Yes | — |
 | POST | `/v1/commitment/create` | Create Pedersen commitment | Yes | ✓ |
 | POST | `/v1/commitment/verify` | Verify commitment opening | Yes | — |
 | POST | `/v1/commitment/add` | Add two commitments (homomorphic) | Yes | — |
 | POST | `/v1/commitment/subtract` | Subtract two commitments (homomorphic) | Yes | — |
+| POST | `/v1/commitment/create/batch` | Batch create commitments (max 100) | Yes | — |
 | POST | `/v1/viewing-key/generate` | Generate viewing key | Yes | — |
 | POST | `/v1/viewing-key/disclose` | Encrypt tx data for auditor | Yes | ✓ |
 | POST | `/v1/viewing-key/decrypt` | Decrypt tx data with viewing key | Yes | — |
+| POST | `/v1/privacy/score` | Wallet privacy/surveillance score (0-100) | Yes | — |
 
 ### Idempotency
 
@@ -257,7 +264,7 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 |-------|-------|--------|--------|
 | 1 | Hackathon Polish | 7 | ✅ Complete (7/7 closed) |
 | 2 | Production Hardening | 7 | ✅ Complete (5/7 closed, 2 deferred) |
-| 3 | Advanced Privacy | 7 | Planned |
+| 3 | Advanced Privacy | 7 | 🔧 In Progress (2/7 closed) |
 | 4 | Multi-Chain | 6 | Planned |
 | 5 | Backend Aggregation | 5 | Planned |
 | 6 | Enterprise | 6 | Planned |
@@ -269,4 +276,4 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 ---
 
 **Last Updated:** 2026-02-04
-**Status:** Phase 2 Complete | 19 Endpoints | 115 Tests | Agent #274 Active
+**Status:** Phase 3 In Progress | 23 Endpoints | 140 Tests | Agent #274 Active
