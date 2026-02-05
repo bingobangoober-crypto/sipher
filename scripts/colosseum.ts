@@ -1,23 +1,28 @@
 #!/usr/bin/env tsx
 /**
- * Colosseum Agent Hackathon — Engagement Automation
+ * Colosseum Agent Hackathon — Autonomous Engagement Agent
  *
- * Cross-pollinates with other hackathon agents by:
+ * LLM-powered agent that cross-pollinates with other hackathon agents by:
  * 1. Fetching forum posts and projects
- * 2. Posting tailored comments offering Sipher privacy integration
- * 3. Voting for complementary projects
- * 4. Tracking all engagement to avoid duplicates
+ * 2. Generating contextual comments using LLM (fear→solution strategy)
+ * 3. Creating autonomous forum posts with marketing content
+ * 4. Voting for complementary projects
+ * 5. Tracking all engagement to avoid duplicates
  *
  * Usage:
  *   tsx scripts/colosseum.ts engage     # Run full engagement cycle
+ *   tsx scripts/colosseum.ts heartbeat  # Continuous loop until hackathon ends
  *   tsx scripts/colosseum.ts status     # Show engagement stats
  *   tsx scripts/colosseum.ts leaderboard # Show vote leaderboard
  *   tsx scripts/colosseum.ts posts      # List recent forum posts
  *   tsx scripts/colosseum.ts vote-all   # Vote for all projects we haven't voted for
  *
  * Env:
- *   COLOSSEUM_API_KEY  — Agent API key (required)
- *   DRY_RUN=1          — Preview without posting (optional)
+ *   COLOSSEUM_API_KEY    — Agent API key (required)
+ *   DRY_RUN=1            — Preview without posting (optional)
+ *   OPENROUTER_API_KEY   — OpenRouter API key for LLM comments (optional)
+ *   LLM_MODEL            — Model to use (default: anthropic/claude-3.5-haiku)
+ *   USE_LLM=0            — Disable LLM, use templates only
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
@@ -41,6 +46,12 @@ const MAX_COMMENTS_PER_RUN = parseInt(process.env.MAX_COMMENTS || '15', 10)
 const COMMENT_DELAY_MS = 800 // delay between comments to avoid rate limits
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || '1800000', 10) // 30 min
 const HACKATHON_END = new Date('2026-02-12T17:00:00.000Z')
+
+// LLM Configuration
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
+const LLM_MODEL = process.env.LLM_MODEL || 'anthropic/claude-3.5-haiku'
+const USE_LLM = process.env.USE_LLM !== '0' && !!OPENROUTER_API_KEY
+const POST_INTERVAL_HOURS = 12 // Create new forum post every 12 hours
 
 function getApiKey(): string {
   if (process.env.COLOSSEUM_API_KEY) return process.env.COLOSSEUM_API_KEY
@@ -88,9 +99,12 @@ interface Project {
 interface EngagementState {
   commentedPosts: Record<number, { commentId: number, date: string }>
   votedProjects: Record<number, { date: string }>
+  ourPostIds: number[]           // Track our created posts
+  lastPostTime: number           // Last post creation timestamp
   lastRun: string | null
   totalComments: number
   totalVotes: number
+  totalPosts: number             // Track post count
 }
 
 // ---------------------------------------------------------------------------
@@ -99,14 +113,24 @@ interface EngagementState {
 
 function loadState(): EngagementState {
   if (existsSync(STATE_FILE)) {
-    return JSON.parse(readFileSync(STATE_FILE, 'utf-8'))
+    const state = JSON.parse(readFileSync(STATE_FILE, 'utf-8'))
+    // Ensure new fields exist for backwards compatibility
+    return {
+      ourPostIds: [],
+      lastPostTime: 0,
+      totalPosts: 0,
+      ...state,
+    }
   }
   return {
     commentedPosts: {},
     votedProjects: {},
+    ourPostIds: [],
+    lastPostTime: 0,
     lastRun: null,
     totalComments: 0,
     totalVotes: 0,
+    totalPosts: 0,
   }
 }
 
@@ -167,6 +191,14 @@ async function voteProject(projectId: number): Promise<boolean> {
   }
 }
 
+async function createForumPost(title: string, body: string): Promise<number> {
+  const data = await api<{ post: { id: number } }>('/forum/posts', {
+    method: 'POST',
+    body: JSON.stringify({ title, body }),
+  })
+  return data.post.id
+}
+
 // ---------------------------------------------------------------------------
 // Comment Generation
 // ---------------------------------------------------------------------------
@@ -205,10 +237,197 @@ function categorizeProject(post: ForumPost): string {
   return 'general'
 }
 
-function generateComment(post: ForumPost): string {
+// ---------------------------------------------------------------------------
+// LLM Integration
+// ---------------------------------------------------------------------------
+
+const COMMENT_SYSTEM_PROMPT = `You are Sipher, a privacy-focused AI agent in the Colosseum hackathon.
+Write a forum comment to engage with another agent's post and encourage them to vote for you.
+
+STRATEGY (in order):
+1. ACKNOWLEDGE their project genuinely (1 sentence)
+2. FEAR: Point out a specific privacy vulnerability in their approach (2-3 sentences)
+   - Be specific to their project type (DeFi, trading, payments, etc.)
+   - Emphasize: "privacy is not optional anymore - it's mandatory for agents handling real value"
+   - Examples: front-running, MEV, address linkability, amount exposure, wallet surveillance
+3. SOLUTION: Introduce Sipher as the fix (2 sentences)
+   - Mention specific endpoints if relevant (/transfer/shield, /stealth/generate, /scan/payments)
+4. CTA: End with a question or invitation to collaborate
+
+TONE: Conversational, peer-to-peer, not salesy. You're a fellow builder, not a marketer.
+LINK: Always include https://sipher.sip-protocol.org/skill.md
+LENGTH: 100-150 words max
+
+CRITICAL: Output ONLY the comment text. No preamble, no "Here's my response:", no meta-commentary. Just the comment itself.`
+
+function cleanLLMResponse(text: string): string {
+  // Remove common LLM prefixes/preambles
+  return text
+    .replace(/^(Here's|Here is|My response|Strategic response|Comment)[^:]*:\s*/i, '')
+    .replace(/^---+\s*/m, '')
+    .trim()
+}
+
+async function generateCommentWithLLM(post: ForumPost): Promise<string> {
+  const userPrompt = `Forum post from agent "${post.agentName}":
+
+Title: ${post.title}
+
+Content:
+${post.body.slice(0, 1500)}
+
+Write a comment that engages with this post using the fear→solution strategy. Output only the comment text.`
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://sipher.sip-protocol.org',
+      'X-Title': 'Sipher Agent',
+    },
+    body: JSON.stringify({
+      model: LLM_MODEL,
+      messages: [
+        { role: 'system', content: COMMENT_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`OpenRouter API error: ${res.status} ${err}`)
+  }
+
+  const data = await res.json() as { choices: { message: { content: string } }[] }
+  return cleanLLMResponse(data.choices[0].message.content)
+}
+
+async function generateComment(post: ForumPost): Promise<string> {
+  // Try LLM first
+  if (USE_LLM) {
+    try {
+      return await generateCommentWithLLM(post)
+    } catch (err) {
+      console.warn(`  [LLM] Failed, falling back to template: ${err}`)
+    }
+  }
+
+  // Fallback to template
   const category = categorizeProject(post)
   const template = COMMENT_TEMPLATES[category] || COMMENT_TEMPLATES.general
   return template(post.agentName || 'team')
+}
+
+// ---------------------------------------------------------------------------
+// Autonomous Post Generation
+// ---------------------------------------------------------------------------
+
+const POST_TOPICS: Record<number, string> = {
+  0: 'discussion',  // Sunday - RFC/Discussion
+  1: 'fear',        // Monday - Fear/Problem
+  2: 'technical',   // Tuesday - Technical Deep-Dive
+  3: 'guide',       // Wednesday - Integration Guide
+  4: 'news',        // Thursday - Industry News
+  5: 'callout',     // Friday - Call to Action
+  6: 'progress',    // Saturday - Progress Update
+}
+
+const POST_SYSTEM_PROMPT = `You are Sipher, a privacy agent in the Colosseum Agent Hackathon.
+Write a forum post that will attract attention and votes from other agents.
+
+STRATEGY:
+1. Hook: Start with a provocative statement or question about privacy
+2. Fear: Describe the real risks of no privacy (MEV, surveillance, front-running)
+3. Empathy: Show you understand their challenges
+4. Solution: Introduce Sipher naturally (not salesy)
+5. CTA: End with a question or invitation to discuss/integrate
+
+TONE: Technical but accessible. You're a peer, not a vendor.
+FORMAT:
+- Title: Catchy, under 60 chars, no clickbait
+- Body: 200-400 words, use markdown formatting
+- Include link to https://sipher.sip-protocol.org/skill.md
+
+Current Sipher stats:
+- 65 endpoints live
+- 353 tests passing
+- 15 chains supported (Solana, NEAR, EVM, Cosmos, Bitcoin, Move)
+- Mainnet deployed on Solana
+
+CRITICAL: Return ONLY valid JSON with this exact format, no preamble or explanation:
+{"title": "Your Title Here", "body": "Your markdown body here..."}`
+
+const TOPIC_PROMPTS: Record<string, string> = {
+  fear: 'Write a fear-based post about why agents MUST have privacy. Focus on a specific risk: MEV attacks, wallet surveillance, front-running, or amount exposure. Make it urgent.',
+  technical: 'Write a technical deep-dive explaining how stealth addresses work under the hood. Include code snippets showing API calls to Sipher endpoints.',
+  guide: 'Write a quick integration guide: "Add Privacy to Your Agent in 2 API Calls". Show the minimal code needed to generate a stealth address and shield a transfer.',
+  news: 'Write about a recent (hypothetical but realistic) incident where an agent got exploited due to lack of privacy. Use this to pitch Sipher as the solution.',
+  callout: 'Write a collaborative callout to specific agent categories (DeFi, trading, payments). Invite them to integrate with Sipher for mutual benefit.',
+  progress: 'Write a progress update post: "Sipher Day N: What We Built". Highlight recent achievements, metrics, and what\'s coming next.',
+  discussion: 'Write an RFC-style discussion post: "Should Privacy Be Opt-In or Opt-Out for Agents?" Encourage debate and engagement.',
+}
+
+async function generateForumPost(topic: string): Promise<{ title: string; body: string }> {
+  const topicPrompt = TOPIC_PROMPTS[topic] || TOPIC_PROMPTS.progress
+  const userPrompt = `${topicPrompt}
+
+Remember: Return ONLY valid JSON with "title" and "body" fields.`
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://sipher.sip-protocol.org',
+      'X-Title': 'Sipher Agent',
+    },
+    body: JSON.stringify({
+      model: LLM_MODEL,
+      messages: [
+        { role: 'system', content: POST_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 800,
+      temperature: 0.7,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`OpenRouter API error: ${res.status} ${err}`)
+  }
+
+  const data = await res.json() as { choices: { message: { content: string } }[] }
+  const content = data.choices[0].message.content.trim()
+
+  // Parse JSON response - handle both valid JSON and malformed responses
+  try {
+    // Handle potential markdown code blocks
+    const jsonStr = content.replace(/^```json?\n?|\n?```$/g, '').trim()
+    return JSON.parse(jsonStr)
+  } catch {
+    // LLM sometimes outputs literal newlines in JSON - try regex extraction
+    const titleMatch = content.match(/"title"\s*:\s*"([^"]+)"/)
+    const bodyMatch = content.match(/"body"\s*:\s*"([\s\S]+)"(?:\s*})?\s*$/)
+
+    if (titleMatch && bodyMatch) {
+      return {
+        title: titleMatch[1],
+        body: bodyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'),
+      }
+    }
+
+    throw new Error(`Failed to parse LLM response as JSON: ${content.slice(0, 300)}...`)
+  }
+}
+
+function selectTopicForToday(): string {
+  const day = new Date().getDay()
+  return POST_TOPICS[day] || 'progress'
 }
 
 // ---------------------------------------------------------------------------
@@ -239,9 +458,11 @@ async function cmdEngage(): Promise<void> {
 
   let newComments = 0
   for (const post of postsThisRun) {
-    const comment = generateComment(post)
     console.log(`\n--- Post #${post.id}: "${post.title}" (${post.agentName}) ---`)
     console.log(`Category: ${categorizeProject(post)}`)
+    console.log(`Generating comment...${USE_LLM ? ' (LLM)' : ' (template)'}`)
+
+    const comment = await generateComment(post)
     console.log(`Comment preview: ${comment.slice(0, 120)}...`)
 
     if (!DRY_RUN) {
@@ -320,9 +541,13 @@ async function cmdStatus(): Promise<void> {
   console.log(`\n=== Sipher Engagement Status ===`)
   console.log(`Total comments: ${state.totalComments}`)
   console.log(`Total votes: ${state.totalVotes}`)
+  console.log(`Total posts: ${state.totalPosts}`)
   console.log(`Last run: ${state.lastRun || 'never'}`)
+  console.log(`Last post: ${state.lastPostTime ? new Date(state.lastPostTime).toISOString() : 'never'}`)
   console.log(`\nCommented posts: ${Object.keys(state.commentedPosts).length}`)
   console.log(`Voted projects: ${Object.keys(state.votedProjects).length}`)
+  console.log(`Our posts created: ${state.ourPostIds.length}`)
+  console.log(`LLM: ${USE_LLM ? `enabled (${LLM_MODEL})` : 'disabled'}`)
 }
 
 async function cmdLeaderboard(): Promise<void> {
@@ -437,6 +662,8 @@ async function cmdHeartbeat(): Promise<void> {
 
   console.log(`\n=== Sipher Heartbeat Started ===`)
   console.log(`Interval: ${intervalMin} min`)
+  console.log(`LLM: ${USE_LLM ? `enabled (${LLM_MODEL})` : 'disabled (templates)'}`)
+  console.log(`Auto-posts: every ${POST_INTERVAL_HOURS}h`)
   console.log(`Hackathon ends: ${HACKATHON_END.toISOString()} (${timeUntilEnd()} remaining)`)
   console.log(`PID: ${process.pid}`)
   console.log(`Kill with: kill ${process.pid}`)
@@ -479,11 +706,39 @@ async function cmdHeartbeat(): Promise<void> {
         nextSteps.forEach(s => console.log(`  - ${s}`))
       }
 
-      // 3. Run engagement cycle
+      // 3. Maybe create autonomous forum post (every POST_INTERVAL_HOURS)
+      const state = loadState()
+      const hoursSinceLastPost = (Date.now() - state.lastPostTime) / 3_600_000
+      if (USE_LLM && hoursSinceLastPost >= POST_INTERVAL_HOURS) {
+        console.log(`[${ts()}] Time for new forum post (${hoursSinceLastPost.toFixed(1)}h since last)...`)
+        const topic = selectTopicForToday()
+        console.log(`[${ts()}] Topic: ${topic}`)
+
+        try {
+          const { title, body } = await generateForumPost(topic)
+          console.log(`[${ts()}] Generated: "${title}"`)
+          console.log(`[${ts()}] Preview: ${body.slice(0, 150)}...`)
+
+          if (!DRY_RUN) {
+            const postId = await createForumPost(title, body)
+            state.ourPostIds.push(postId)
+            state.lastPostTime = Date.now()
+            state.totalPosts++
+            saveState(state)
+            console.log(`[${ts()}] Created forum post #${postId}: "${title}"`)
+          } else {
+            console.log(`[${ts()}] [DRY RUN] Would create post: "${title}"`)
+          }
+        } catch (err) {
+          console.error(`[${ts()}] Post creation failed: ${err}`)
+        }
+      }
+
+      // 4. Run engagement cycle
       console.log(`[${ts()}] Running engagement cycle...`)
       await cmdEngage()
 
-      // 4. Check leaderboard position
+      // 5. Check leaderboard position
       const projects = await getProjects(50)
       const us = projects.find(p => p.id === PROJECT_ID)
       if (us) {

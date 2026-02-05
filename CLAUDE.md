@@ -63,18 +63,121 @@
 ## DEVELOPMENT COMMANDS
 
 ```bash
+# Core Development
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
 pnpm test -- --run              # Run tests (165 tests)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
+
+# Template-Based Engagement (scripts/colosseum.ts)
 pnpm colosseum heartbeat        # Autonomous loop (engage every 30 min)
 pnpm colosseum engage           # Single engagement cycle
 pnpm colosseum leaderboard      # Check vote leaderboard
 pnpm colosseum status           # Engagement stats
 pnpm colosseum posts            # List forum posts
-pnpm colosseum vote-all         # Vote for all projects
+
+# LLM-Powered Agent (scripts/sipher-agent.ts) — requires OPENROUTER_API_KEY
+npx tsx scripts/sipher-agent.ts run        # Run one LLM-powered engagement cycle
+npx tsx scripts/sipher-agent.ts heartbeat  # Continuous LLM loop
+npx tsx scripts/sipher-agent.ts status     # Show agent state + engaged agents
+```
+
+---
+
+## SIPHER AUTONOMOUS AGENT
+
+Two engagement systems available:
+
+### 1. Template-Based (`scripts/colosseum.ts`)
+- **Fast, low-cost** — no LLM calls
+- Comments use category-based templates
+- Votes for all projects automatically
+- Good for baseline engagement
+
+### 2. LLM-Powered (`scripts/sipher-agent.ts`)
+- **Autonomous reasoning** — thinks before acting
+- Uses OpenRouter (Claude Haiku) for decisions
+- State-first design: checks local state before LLM call (saves tokens)
+- Evaluates projects individually, records decisions
+- Generates contextual comments
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  STATE-FIRST DESIGN                                         │
+│                                                             │
+│  1. Load state → check_voted/check_commented (no LLM)       │
+│  2. Only NEW items → ask LLM to reason                      │
+│  3. Save decision → never reconsider same item              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Agent Tools:**
+| Tool | Purpose |
+|------|---------|
+| `get_projects` | Fetch all hackathon projects |
+| `check_voted` | Check state before LLM evaluation |
+| `vote_for_project` | Vote with reason |
+| `skip_voting` | Record "no" decision (avoid re-evaluation) |
+| `get_forum_posts` | Fetch recent posts |
+| `check_commented` | Check state before commenting |
+| `post_comment` | Post contextual comment |
+| `get_our_posts` | See who engaged with us |
+| `check_engaged_with_us` | Prioritize reciprocity |
+| `get_leaderboard` | Check ranking |
+| `done` | Signal cycle complete |
+
+**Cost:** ~$0.10/cycle (Haiku), decreases as state fills up
+
+**State file:** `scripts/.sipher-agent-state.json`
+
+---
+
+## COLOSSEUM HACKATHON STATUS
+
+**Deadline:** Feb 12, 2026 17:00 UTC
+**Prize Pool:** $100K USDC
+
+### Our Project
+- **Agent ID:** 274
+- **Project ID:** 148
+- **Slug:** sipher-privacy-as-a-skill-for-solana-agents
+- **URL:** https://colosseum.com/agent-hackathon/projects/sipher-privacy-as-a-skill-for-solana-agents
+
+### Our Forum Posts
+| ID | Title |
+|----|-------|
+| 373 | Sipher: Privacy-as-a-Skill — Give Your Agent Stealth Addresses |
+| 374 | Why Agent-to-Agent Payments Need Privacy |
+| 376 | Sipher Day 1: Deployed to Mainnet — 13 Privacy Endpoints Live |
+| 498 | Add Privacy to Your Agent in 2 API Calls |
+| 499 | Sipher Day 2: Autonomous Heartbeat Live |
+| 500 | Calling AEGIS, Makora, Clodds, AutoVault, ZNAP |
+| 504 | Your Agent's Wallet is a Public Diary |
+
+### VPS Heartbeat Deployment
+**Location:** `sip@176.222.53.185:~/sipher/`
+
+```bash
+# Check heartbeat status
+ssh sip "ps aux | grep colosseum"
+ssh sip "tail -50 ~/sipher/heartbeat.log"
+
+# Restart heartbeat (template-based)
+ssh sip "pkill -f 'colosseum.mjs' || true"
+ssh sip "cd ~/sipher && source .env && nohup node colosseum.mjs heartbeat >> heartbeat.log 2>&1 &"
+
+# Deploy new version
+npx tsx --compile scripts/colosseum.ts > /tmp/colosseum.mjs
+scp /tmp/colosseum.mjs sip:~/sipher/
+```
+
+**Environment on VPS:**
+```
+~/sipher/.env:
+  COLOSSEUM_API_KEY=xxx
+  OPENROUTER_API_KEY=xxx  # For LLM-powered agent
 ```
 
 ---
@@ -121,7 +224,8 @@ sipher/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
 ├── scripts/
-│   ├── colosseum.ts                # Hackathon engagement automation
+│   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
+│   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
 ├── tests/                          # 165 tests across 16 suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
@@ -282,5 +386,5 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 
 ---
 
-**Last Updated:** 2026-02-04
-**Status:** Phase 3 In Progress | 26 Endpoints | 165 Tests | Agent #274 Active
+**Last Updated:** 2026-02-05
+**Status:** Phase 3 In Progress | 26 Endpoints | 165 Tests | Agent #274 Active | LLM Agent Ready
