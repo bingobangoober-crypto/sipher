@@ -4,6 +4,7 @@
 
 **Base URL:** `https://sipher.sip-protocol.org`
 **Auth:** `X-API-Key: <your-key>` header (skip for `GET /`, `GET /skill.md`, `GET /v1/health`, `GET /v1/ready`, `GET /v1/errors`)
+**Rate Limits:** Tiered by API key — Free: 100/hr, Pro: 10K/hr, Enterprise: 100K/hr
 **Docs:** Interactive API docs at `/docs` | OpenAPI spec at `/v1/openapi.json`
 
 ---
@@ -457,6 +458,38 @@ Mutation endpoints (`/transfer/shield`, `/transfer/claim`, `/commitment/create`,
 6. Agent claims funds to real wallet → POST /v1/transfer/claim
 7. If audit needed → POST /v1/viewing-key/disclose
 8. Auditor decrypts → POST /v1/viewing-key/decrypt
+```
+
+---
+
+## Rate Limiting
+
+API keys are tiered with different rate limits:
+
+| Tier | Requests/Hour | Endpoints |
+|------|---------------|-----------|
+| Free | 100 | Basic (stealth, commitment, viewing-key) |
+| Pro | 10,000 | All endpoints |
+| Enterprise | 100,000 | All endpoints |
+
+Rate limit headers are returned on every response:
+- `X-RateLimit-Limit`: Requests allowed per hour
+- `X-RateLimit-Remaining`: Requests remaining in window
+- `X-RateLimit-Reset`: Unix timestamp when window resets
+- `X-RateLimit-Tier`: Your tier (free/pro/enterprise)
+
+---
+
+## Admin API
+
+Key management endpoints (require `ADMIN_API_KEY`):
+
+```
+GET  /v1/admin/keys       → List all API keys (masked)
+POST /v1/admin/keys       → Create new key { tier, name, expiresAt? }
+GET  /v1/admin/keys/:id   → Get key details + usage stats
+DELETE /v1/admin/keys/:id → Revoke a key
+GET  /v1/admin/tiers      → List tier limits
 ```
 
 ---
