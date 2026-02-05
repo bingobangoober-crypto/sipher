@@ -161,7 +161,45 @@ interface EngagementState {
   totalComments: number
   totalVotes: number
   totalPosts: number             // Track post count
+  leaderboardRank?: number       // Current rank for knowledge context
+  knowledge?: {                  // Cached GitHub knowledge
+    github: GitHubKnowledge | null
+    lastFetch: number
+  }
 }
+
+// ---------------------------------------------------------------------------
+// GitHub Knowledge Types
+// ---------------------------------------------------------------------------
+
+interface GitHubCommit {
+  sha: string
+  message: string
+  date: string
+}
+
+interface GitHubIssue {
+  number: number
+  title: string
+  labels: string[]
+}
+
+interface GitHubPR {
+  number: number
+  title: string
+  state: string
+}
+
+interface GitHubKnowledge {
+  commits: GitHubCommit[]
+  issues: GitHubIssue[]
+  prs: GitHubPR[]
+  testCount: number
+}
+
+const KNOWLEDGE_CACHE_TTL = 30 * 60 * 1000 // 30 minutes
+const GITHUB_OWNER = 'sip-protocol'
+const GITHUB_REPO = 'sipher'
 
 // ---------------------------------------------------------------------------
 // State Management
@@ -175,6 +213,8 @@ function loadState(): EngagementState {
       ourPostIds: [],
       lastPostTime: 0,
       totalPosts: 0,
+      leaderboardRank: undefined,
+      knowledge: undefined,
       ...state,
     }
   }
@@ -187,6 +227,8 @@ function loadState(): EngagementState {
     totalComments: 0,
     totalVotes: 0,
     totalPosts: 0,
+    leaderboardRank: undefined,
+    knowledge: undefined,
   }
 }
 
@@ -204,11 +246,125 @@ function saveState(state: EngagementState): void {
 }
 
 // ---------------------------------------------------------------------------
+// GitHub Knowledge Fetching
+// ---------------------------------------------------------------------------
+
+async function fetchGitHubKnowledge(): Promise<GitHubKnowledge> {
+  const headers = {
+    'Accept': 'application/vnd.github+json',
+    'User-Agent': 'Sipher-Agent',
+  }
+
+  // Fetch in parallel
+  const [commitsRes, issuesRes, prsRes] = await Promise.all([
+    fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?per_page=5`, { headers }),
+    fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=open&per_page=10`, { headers }),
+    fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls?state=open&per_page=10`, { headers }),
+  ])
+
+  const [commits, issues, prs] = await Promise.all([
+    commitsRes.ok ? commitsRes.json() : [],
+    issuesRes.ok ? issuesRes.json() : [],
+    prsRes.ok ? prsRes.json() : [],
+  ])
+
+  return {
+    commits: (commits as any[]).map((c: any) => ({
+      sha: c.sha?.slice(0, 7) || '',
+      message: c.commit?.message?.split('\n')[0]?.slice(0, 80) || '',
+      date: c.commit?.author?.date || '',
+    })),
+    issues: (issues as any[]).map((i: any) => ({
+      number: i.number,
+      title: i.title?.slice(0, 60) || '',
+      labels: (i.labels || []).map((l: any) => l.name),
+    })),
+    prs: (prs as any[]).map((p: any) => ({
+      number: p.number,
+      title: p.title?.slice(0, 60) || '',
+      state: p.state,
+    })),
+    testCount: 353, // Default, could be fetched from CI
+  }
+}
+
+function buildKnowledgeContext(
+  github: GitHubKnowledge,
+  state: EngagementState,
+  context: 'post' | 'comment',
+): string {
+  const lines: string[] = []
+
+  // Core stats (compact)
+  lines.push(`Current stats: ${github.testCount} tests passing, ${state.totalComments} comments posted, rank #${state.leaderboardRank || '?'}`)
+
+  if (context === 'post') {
+    // Posts get full context
+    if (github.commits.length > 0) {
+      lines.push(`Recent commits: ${github.commits.slice(0, 2).map(c => `${c.sha} ${c.message.slice(0, 40)}`).join('; ')}`)
+    }
+
+    // Integration opportunities
+    const integrationIssues = github.issues.filter(i =>
+      i.labels.includes('integration') || i.title.toLowerCase().includes('integration'),
+    )
+    if (integrationIssues.length > 0) {
+      lines.push(`Active integrations: ${integrationIssues.map(i => `#${i.number} ${i.title}`).join(', ')}`)
+    }
+
+    // Features in progress
+    if (github.prs.length > 0) {
+      lines.push(`Open PRs: ${github.prs.slice(0, 2).map(p => `#${p.number} ${p.title}`).join(', ')}`)
+    }
+  } else {
+    // Comments get minimal context (cost-effective)
+    if (github.commits.length > 0) {
+      lines.push(`Latest: ${github.commits[0].sha} ${github.commits[0].message.slice(0, 50)}`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+async function getKnowledge(state: EngagementState): Promise<string> {
+  const now = Date.now()
+
+  // Refresh if cache expired or missing
+  if (!state.knowledge?.github || now - state.knowledge.lastFetch > KNOWLEDGE_CACHE_TTL) {
+    try {
+      console.log(`[${ts()}] Refreshing GitHub knowledge...`)
+      const github = await fetchGitHubKnowledge()
+      state.knowledge = { github, lastFetch: now }
+      console.log(`[${ts()}] Knowledge: ${github.commits.length} commits, ${github.issues.length} issues, ${github.prs.length} PRs`)
+    } catch (err) {
+      console.warn(`[${ts()}] Failed to refresh knowledge: ${err}`)
+      // Use stale cache if available
+    }
+  }
+
+  if (!state.knowledge?.github) {
+    return 'Current stats: 353 tests passing, mainnet deployed on Solana'
+  }
+
+  return buildKnowledgeContext(state.knowledge.github, state, 'post')
+}
+
+async function getCommentKnowledge(state: EngagementState): Promise<string> {
+  // Reuse cached knowledge, just format differently
+  if (!state.knowledge?.github) {
+    return ''
+  }
+  return buildKnowledgeContext(state.knowledge.github, state, 'comment')
+}
+
+// ---------------------------------------------------------------------------
 // API Client (with timeout and structured error handling)
 // ---------------------------------------------------------------------------
 
 const API_TIMEOUT_MS = 30_000 // 30 second timeout for API calls
-const LLM_TIMEOUT_MS = 60_000 // 60 second timeout for LLM calls
+const LLM_TIMEOUT_MS = 120_000 // 120 second timeout for LLM calls (increased for reliability)
+const LLM_MAX_RETRIES = 2 // Retry LLM calls up to 2 times
+const LLM_RETRY_DELAY_MS = 3_000 // 3 second delay between retries
 
 interface ApiError {
   status: number
@@ -390,7 +546,8 @@ function categorizeProject(post: ForumPost): string {
 // LLM Integration
 // ---------------------------------------------------------------------------
 
-const COMMENT_SYSTEM_PROMPT = `You are Sipher, a privacy-focused AI agent in the Colosseum hackathon.
+function getCommentSystemPrompt(knowledge: string): string {
+  return `You are Sipher, a privacy-focused AI agent in the Colosseum hackathon.
 Write a forum comment to engage with another agent's post and encourage them to vote for you.
 
 STRATEGY (in order):
@@ -406,8 +563,10 @@ STRATEGY (in order):
 TONE: Conversational, peer-to-peer, not salesy. You're a fellow builder, not a marketer.
 LINK: Always include https://sipher.sip-protocol.org/skill.md
 LENGTH: 100-150 words max
+${knowledge ? `\nCONTEXT: ${knowledge}` : ''}
 
 CRITICAL: Output ONLY the comment text. No preamble, no "Here's my response:", no meta-commentary. Just the comment itself.`
+}
 
 function cleanLLMResponse(text: string): string {
   // Remove common LLM prefixes/preambles
@@ -417,7 +576,43 @@ function cleanLLMResponse(text: string): string {
     .trim()
 }
 
-async function generateCommentWithLLM(post: ForumPost): Promise<string> {
+/**
+ * Retry wrapper for LLM calls
+ * Retries up to LLM_MAX_RETRIES times with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  context: string,
+): Promise<T> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= LLM_MAX_RETRIES; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err as Error
+      const isLastAttempt = attempt === LLM_MAX_RETRIES
+
+      if (isLastAttempt) {
+        console.error(`  [LLM] ${context} failed after ${attempt + 1} attempts: ${err}`)
+        throw lastError
+      }
+
+      // Exponential backoff: 3s, 6s, 12s...
+      const delay = LLM_RETRY_DELAY_MS * Math.pow(2, attempt)
+      console.warn(`  [LLM] ${context} attempt ${attempt + 1} failed, retrying in ${delay / 1000}s: ${err}`)
+      await new Promise(r => setTimeout(r, delay))
+    }
+  }
+
+  throw lastError // Should never reach here
+}
+
+async function generateCommentWithLLM(post: ForumPost, state: EngagementState): Promise<string> {
+  // Get minimal knowledge for comments (cost-effective)
+  const knowledge = await getCommentKnowledge(state)
+  const systemPrompt = getCommentSystemPrompt(knowledge)
+
   const userPrompt = `Forum post from agent "${post.agentName}":
 
 Title: ${post.title}
@@ -443,7 +638,7 @@ Write a comment that engages with this post using the fear→solution strategy. 
       body: JSON.stringify({
         model: LLM_MODEL,
         messages: [
-          { role: 'system', content: COMMENT_SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
         max_tokens: 300,
@@ -463,17 +658,22 @@ Write a comment that engages with this post using the fear→solution strategy. 
   }
 }
 
-async function generateComment(post: ForumPost): Promise<string> {
-  // Try LLM first
+async function generateComment(post: ForumPost, state: EngagementState): Promise<string | null> {
+  // LLM-only mode: no template fallback
   if (USE_LLM) {
     try {
-      return await generateCommentWithLLM(post)
-    } catch (err) {
-      console.warn(`  [LLM] Failed, falling back to template: ${err}`)
+      return await withRetry(
+        () => generateCommentWithLLM(post, state),
+        `comment for post #${post.id}`,
+      )
+    } catch {
+      // All retries exhausted - skip this comment entirely
+      console.warn(`  [LLM] Skipping comment - all retries failed`)
+      return null
     }
   }
 
-  // Fallback to template
+  // If LLM not enabled, use template (for backward compatibility / testing)
   const category = categorizeProject(post)
   const template = COMMENT_TEMPLATES[category] || COMMENT_TEMPLATES.general
   return template(post.agentName || 'team')
@@ -483,17 +683,37 @@ async function generateComment(post: ForumPost): Promise<string> {
 // Autonomous Post Generation
 // ---------------------------------------------------------------------------
 
-// Topics cycle every 2 hours (12 posts/day = 2 cycles through all topics)
+// Option C: Fear-heavy hybrid (8 fear, 2 tech, 1 progress, 1 callout)
+// 12 posts/day = every 2 hours
 const POST_TOPICS: string[] = [
-  'fear',        // 0: Fear/Problem - MEV, surveillance
-  'technical',   // 1: Technical Deep-Dive - How stealth works
-  'guide',       // 2: Integration Guide - 2 API calls
-  'news',        // 3: Industry News - Recent exploits
-  'callout',     // 4: Callout - Invite specific agents
-  'progress',    // 5: Progress Update - What we built
+  'fear',        // 0: MEV attacks
+  'fear',        // 1: Wallet surveillance
+  'technical',   // 2: How stealth works
+  'fear',        // 3: Front-running risks
+  'fear',        // 4: Amount exposure
+  'progress',    // 5: What we built
+  'fear',        // 6: Address linkability
+  'fear',        // 7: Competitor analysis attacks
+  'technical',   // 8: Integration guide
+  'fear',        // 9: Public mempool exploitation
+  'callout',     // 10: Invite specific agents
+  'fear',        // 11: Regulatory risk
 ]
 
-const POST_SYSTEM_PROMPT = `You are Sipher, a privacy agent in the Colosseum Agent Hackathon.
+// Fear topic variations (so 8 fear posts don't feel repetitive)
+const FEAR_ANGLES = [
+  'mev',           // MEV attacks on agent transactions
+  'surveillance',  // Wallet surveillance / address clustering
+  'frontrun',      // Front-running in DeFi agents
+  'amounts',       // Amount exposure in payments
+  'linkability',   // Cross-agent payment linkability
+  'competitive',   // Competitor analysis attacks
+  'mempool',       // Public mempool exploitation
+  'regulatory',    // Regulatory risk without compliance
+]
+
+function getPostSystemPrompt(knowledge: string): string {
+  return `You are Sipher, a privacy agent in the Colosseum Agent Hackathon.
 Write a forum post that will attract attention and votes from other agents.
 
 STRATEGY:
@@ -509,23 +729,33 @@ FORMAT:
 - Body: 200-400 words, use markdown formatting
 - Include link to https://sipher.sip-protocol.org/skill.md
 
-Current Sipher stats:
-- 65 endpoints live
-- 353 tests passing
-- 15 chains supported (Solana, NEAR, EVM, Cosmos, Bitcoin, Move)
-- Mainnet deployed on Solana
+DYNAMIC CONTEXT (use this to make posts feel current and authentic):
+${knowledge}
 
 CRITICAL: Return ONLY valid JSON with this exact format, no preamble or explanation:
 {"title": "Your Title Here", "body": "Your markdown body here..."}`
+}
 
 const TOPIC_PROMPTS: Record<string, string> = {
-  fear: 'Write a fear-based post about why agents MUST have privacy. Focus on a specific risk: MEV attacks, wallet surveillance, front-running, or amount exposure. Make it urgent.',
+  fear: 'Write a fear-based post about why agents MUST have privacy. Make it urgent and specific.',
   technical: 'Write a technical deep-dive explaining how stealth addresses work under the hood. Include code snippets showing API calls to Sipher endpoints.',
   guide: 'Write a quick integration guide: "Add Privacy to Your Agent in 2 API Calls". Show the minimal code needed to generate a stealth address and shield a transfer.',
   news: 'Write about a recent (hypothetical but realistic) incident where an agent got exploited due to lack of privacy. Use this to pitch Sipher as the solution.',
   callout: 'Write a collaborative callout to specific agent categories (DeFi, trading, payments). Invite them to integrate with Sipher for mutual benefit.',
-  progress: 'Write a progress update post: "Sipher Day N: What We Built". Highlight recent achievements, metrics, and what\'s coming next.',
+  progress: 'Write a progress update post: "Sipher Day N: What We Built". Highlight recent achievements, metrics, and what\'s coming next. Use the knowledge context provided.',
   discussion: 'Write an RFC-style discussion post: "Should Privacy Be Opt-In or Opt-Out for Agents?" Encourage debate and engagement.',
+}
+
+// Fear angle-specific prompts
+const FEAR_ANGLE_PROMPTS: Record<string, string> = {
+  mev: 'Focus on MEV attacks. Explain how bots extract value from visible agent transactions. Mention specific attack vectors: sandwich attacks, frontrunning, backrunning.',
+  surveillance: 'Focus on wallet surveillance and address clustering. Explain how anyone can track agent wallets, link transactions, and profile behavior patterns.',
+  frontrun: 'Focus on front-running risks for DeFi agents. Explain how visible swap intents get frontrun, costing agents money on every trade.',
+  amounts: 'Focus on amount exposure in payments. Explain how visible transfer amounts reveal agent treasury sizes, payment patterns, and business relationships.',
+  linkability: 'Focus on address linkability across payments. Explain how receiving payments to the same address links all senders together, exposing the entire payment graph.',
+  competitive: 'Focus on competitive intelligence attacks. Explain how competitors can watch agent transactions to copy strategies, front-run opportunities, or undercut pricing.',
+  mempool: 'Focus on public mempool exploitation. Explain how unconfirmed transactions are visible to everyone, enabling real-time exploitation before settlement.',
+  regulatory: 'Focus on regulatory risk without compliance tools. Explain how privacy WITHOUT selective disclosure is a liability, but Sipher provides viewing keys for auditors.',
 }
 
 // Tags for each topic type — always include 'privacy' as our core identity
@@ -541,8 +771,23 @@ const TOPIC_TAGS: Record<string, string[]> = {
   discussion: ['privacy', 'ideation', 'ai'],
 }
 
-async function generateForumPost(topic: string): Promise<{ title: string; body: string }> {
-  const topicPrompt = TOPIC_PROMPTS[topic] || TOPIC_PROMPTS.progress
+async function generateForumPost(
+  topic: string,
+  state: EngagementState,
+  fearAngle?: string,
+): Promise<{ title: string; body: string }> {
+  // Get dynamic knowledge
+  const knowledge = await getKnowledge(state)
+  const systemPrompt = getPostSystemPrompt(knowledge)
+
+  // Build topic-specific prompt
+  let topicPrompt = TOPIC_PROMPTS[topic] || TOPIC_PROMPTS.progress
+
+  // For fear topics, add the specific angle
+  if (topic === 'fear' && fearAngle && FEAR_ANGLE_PROMPTS[fearAngle]) {
+    topicPrompt = `${topicPrompt} ${FEAR_ANGLE_PROMPTS[fearAngle]}`
+  }
+
   const userPrompt = `${topicPrompt}
 
 Remember: Return ONLY valid JSON with "title" and "body" fields.`
@@ -564,7 +809,7 @@ Remember: Return ONLY valid JSON with "title" and "body" fields.`
       body: JSON.stringify({
         model: LLM_MODEL,
         messages: [
-          { role: 'system', content: POST_SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
         max_tokens: 800,
@@ -604,11 +849,29 @@ Remember: Return ONLY valid JSON with "title" and "body" fields.`
   }
 }
 
-function selectTopicForToday(): string {
+interface TopicSelection {
+  topic: string
+  fearAngle?: string
+}
+
+function selectTopicForToday(): TopicSelection {
   // Cycle through topics based on hour (every 2 hours = new topic)
   const hour = new Date().getUTCHours()
   const topicIndex = Math.floor(hour / 2) % POST_TOPICS.length
-  return POST_TOPICS[topicIndex]
+  const topic = POST_TOPICS[topicIndex]
+
+  // For fear topics, also select a specific angle
+  if (topic === 'fear') {
+    // Count how many fear topics came before this index
+    let fearCount = 0
+    for (let i = 0; i < topicIndex; i++) {
+      if (POST_TOPICS[i] === 'fear') fearCount++
+    }
+    const fearAngle = FEAR_ANGLES[fearCount % FEAR_ANGLES.length]
+    return { topic, fearAngle }
+  }
+
+  return { topic }
 }
 
 // ---------------------------------------------------------------------------
@@ -660,7 +923,14 @@ async function cmdEngage(): Promise<void> {
     console.log(`Category: ${categorizeProject(post)}`)
     console.log(`Generating comment...${USE_LLM ? ' (LLM)' : ' (template)'}`)
 
-    const comment = await generateComment(post)
+    const comment = await generateComment(post, state)
+
+    // Skip if LLM failed (no template fallback in LLM mode)
+    if (comment === null) {
+      console.log(`  -> Skipping (LLM generation failed after retries)`)
+      continue
+    }
+
     console.log(`Comment preview: ${comment.slice(0, 120)}...`)
 
     if (!DRY_RUN) {
@@ -927,11 +1197,15 @@ async function cmdHeartbeat(): Promise<void> {
       const hoursSinceLastPost = (Date.now() - state.lastPostTime) / 3_600_000
       if (USE_LLM && hoursSinceLastPost >= POST_INTERVAL_HOURS) {
         console.log(`[${ts()}] Time for new forum post (${hoursSinceLastPost.toFixed(1)}h since last)...`)
-        const topic = selectTopicForToday()
-        console.log(`[${ts()}] Topic: ${topic}`)
+        const { topic, fearAngle } = selectTopicForToday()
+        console.log(`[${ts()}] Topic: ${topic}${fearAngle ? ` (angle: ${fearAngle})` : ''}`)
 
         try {
-          const { title, body } = await generateForumPost(topic)
+          // Use retry wrapper for LLM post generation
+          const { title, body } = await withRetry(
+            () => generateForumPost(topic, state, fearAngle),
+            `forum post (${topic}${fearAngle ? `/${fearAngle}` : ''})`,
+          )
           const tags = TOPIC_TAGS[topic] || TOPIC_TAGS.progress
           console.log(`[${ts()}] Generated: "${title}"`)
           console.log(`[${ts()}] Tags: ${tags.join(', ')}`)
@@ -948,7 +1222,8 @@ async function cmdHeartbeat(): Promise<void> {
             console.log(`[${ts()}] [DRY RUN] Would create post: "${title}"`)
           }
         } catch (err) {
-          console.error(`[${ts()}] Post creation failed: ${err}`)
+          // All retries exhausted - skip this post, will try again next cycle
+          console.error(`[${ts()}] Post creation failed after retries, skipping: ${err}`)
         }
       }
 
@@ -956,12 +1231,14 @@ async function cmdHeartbeat(): Promise<void> {
       console.log(`[${ts()}] Running engagement cycle...`)
       await cmdEngage()
 
-      // 5. Check leaderboard position
+      // 5. Check leaderboard position and update state for knowledge context
       const projects = await getProjects(50)
       const us = projects.find(p => p.id === PROJECT_ID)
       if (us) {
         const sorted = projects.sort((a, b) => b.agentUpvotes - a.agentUpvotes)
         const rank = sorted.findIndex(p => p.id === PROJECT_ID) + 1
+        state.leaderboardRank = rank
+        saveState(state)
         console.log(`[${ts()}] Leaderboard: #${rank}/${sorted.length} (${us.agentUpvotes} agent / ${us.humanUpvotes} human votes)`)
       }
     } catch (err) {
