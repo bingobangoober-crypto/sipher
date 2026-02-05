@@ -3,8 +3,12 @@ import { z } from 'zod'
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils'
 import { validateRequest } from '../middleware/validation.js'
 import { idempotency } from '../middleware/idempotency.js'
+import { betaEndpoint, getBetaWarning } from '../middleware/beta.js'
 import { getCSPLService } from '../services/cspl.js'
 import { ErrorCode } from '../errors/codes.js'
+
+// Beta middleware for C-SPL endpoints (stub implementation)
+const csplBeta = betaEndpoint('C-SPL (Confidential SPL) endpoints are stub implementations. Real Token Extensions integration coming soon.')
 
 const router = Router()
 
@@ -52,6 +56,7 @@ function toHex(bytes: Uint8Array): string {
 
 router.post(
   '/cspl/wrap',
+  csplBeta,
   idempotency,
   validateRequest({ body: wrapSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -79,6 +84,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           signature: result.signature,
           csplMint: result.csplMint,
@@ -96,6 +103,7 @@ router.post(
 
 router.post(
   '/cspl/unwrap',
+  csplBeta,
   idempotency,
   validateRequest({ body: unwrapSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -123,6 +131,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           signature: result.signature,
           amount: result.amount?.toString(),
@@ -138,6 +148,7 @@ router.post(
 
 router.post(
   '/cspl/transfer',
+  csplBeta,
   idempotency,
   validateRequest({ body: transferSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -166,6 +177,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           signature: result.signature,
           newSenderBalance: result.newSenderBalance ? toHex(result.newSenderBalance) : undefined,

@@ -4,8 +4,12 @@ import { hexToBytes } from '@noble/hashes/utils'
 import type { HexString } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
 import { idempotency } from '../middleware/idempotency.js'
+import { betaEndpoint, getBetaWarning } from '../middleware/beta.js'
 import { getProofProvider } from '../services/proof-provider.js'
 import { ErrorCode } from '../errors/codes.js'
+
+// Beta middleware for proof generation endpoints (using mock provider)
+const proofsBeta = betaEndpoint('ZK proof generation uses mock circuits. Real circuit integration coming soon.')
 
 const router = Router()
 
@@ -87,6 +91,7 @@ function toBytes(hex: string): Uint8Array {
 
 router.post(
   '/proofs/funding/generate',
+  proofsBeta,
   idempotency,
   validateRequest({ body: fundingGenerateSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -105,6 +110,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           proof: result.proof,
           publicInputs: result.publicInputs,
@@ -144,6 +151,7 @@ router.post(
 
 router.post(
   '/proofs/validity/generate',
+  proofsBeta,
   idempotency,
   validateRequest({ body: validityGenerateSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -164,6 +172,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           proof: result.proof,
           publicInputs: result.publicInputs,
@@ -203,6 +213,7 @@ router.post(
 
 router.post(
   '/proofs/fulfillment/generate',
+  proofsBeta,
   idempotency,
   validateRequest({ body: fulfillmentGenerateSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -231,6 +242,8 @@ router.post(
 
       res.json({
         success: true,
+        beta: true,
+        warning: getBetaWarning(req),
         data: {
           proof: result.proof,
           publicInputs: result.publicInputs,

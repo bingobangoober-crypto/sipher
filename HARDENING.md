@@ -40,11 +40,12 @@
 **Files:** `src/routes/transfer.ts`
 **Completed:** 2026-02-05
 
-### [ ] H-03: Document Proofs/CSPL as Beta
+### [x] H-03: Document Proofs/CSPL as Beta ✅
 **Problem:** Endpoints return mock data; agents may think they're real.
-**Solution:** Add `x-beta: true` header + update OpenAPI descriptions.
+**Solution:** Add `X-Beta` header + `beta: true` in responses + warning message.
 **Effort:** 1 hour
-**Files:** `src/routes/proofs.ts`, `src/routes/cspl.ts`, `openapi.yaml`
+**Files:** `src/middleware/beta.ts` (new), `src/routes/proofs.ts`, `src/routes/cspl.ts`
+**Completed:** 2026-02-05
 
 ---
 
@@ -98,6 +99,7 @@
 |----|------|------|-------|
 | H-01 | Request Timeouts | 2026-02-05 | Per-endpoint timeouts (5-90s) |
 | H-02 | Dry-Run for Claim | 2026-02-05 | `dryRun: true` simulates TX |
+| H-03 | Beta Documentation | 2026-02-05 | `X-Beta` header + response warning |
 
 ---
 
