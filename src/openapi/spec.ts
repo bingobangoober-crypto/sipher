@@ -2431,6 +2431,160 @@ export const openApiSpec = {
         },
       },
     },
+  // ─── Inco FHE ──────────────────────────────────────────────────────────
+    '/v1/inco/encrypt': {
+      post: {
+        tags: ['Inco'],
+        operationId: 'encryptIncoValue',
+        summary: 'Encrypt value with FHE',
+        description: 'Encrypt a plaintext value using Fully Homomorphic Encryption (FHEW or TFHE scheme). Returns ciphertext and noise budget.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  plaintext: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Value to encrypt' },
+                  scheme: { type: 'string', enum: ['fhew', 'tfhe'], description: 'FHE scheme to use' },
+                  label: { type: 'string', description: 'Optional label for the encryption' },
+                },
+                required: ['plaintext', 'scheme'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Value encrypted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    warning: { type: 'string' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        encryptionId: { type: 'string', pattern: '^inc_[0-9a-fA-F]{64}$' },
+                        ciphertext: { type: 'string', pattern: '^0x[0-9a-fA-F]{64}$' },
+                        scheme: { type: 'string', enum: ['fhew', 'tfhe'] },
+                        noiseBudget: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/inco/compute': {
+      post: {
+        tags: ['Inco'],
+        operationId: 'computeIncoCiphertexts',
+        summary: 'Compute on encrypted data',
+        description: 'Perform a homomorphic operation on FHE ciphertexts. Operations complete synchronously. Tracks noise budget consumption.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  operation: { type: 'string', enum: ['add', 'mul', 'not', 'compare_eq', 'compare_lt'], description: 'Homomorphic operation' },
+                  ciphertexts: { type: 'array', items: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' }, minItems: 1, maxItems: 3, description: 'Ciphertexts to operate on' },
+                  scheme: { type: 'string', enum: ['fhew', 'tfhe'], default: 'tfhe' },
+                },
+                required: ['operation', 'ciphertexts'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Computation completed',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    warning: { type: 'string' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        computationId: { type: 'string', pattern: '^inc_[0-9a-fA-F]{64}$' },
+                        operation: { type: 'string' },
+                        scheme: { type: 'string' },
+                        operandCount: { type: 'integer' },
+                        resultCiphertext: { type: 'string' },
+                        noiseBudgetRemaining: { type: 'integer' },
+                        status: { type: 'string', enum: ['completed'] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/inco/decrypt': {
+      post: {
+        tags: ['Inco'],
+        operationId: 'decryptIncoResult',
+        summary: 'Decrypt FHE computation result',
+        description: 'Decrypt the output of a completed FHE computation. Returns the plaintext result.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  computationId: { type: 'string', pattern: '^inc_[0-9a-fA-F]{64}$', description: 'Computation ID to decrypt' },
+                },
+                required: ['computationId'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Decryption result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        computationId: { type: 'string' },
+                        operation: { type: 'string' },
+                        decryptedOutput: { type: 'string' },
+                        verificationHash: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Decrypt failed or invalid computation ID', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
   },
   tags: [
     { name: 'Health', description: 'Server health, readiness, and error catalog' },
@@ -2445,5 +2599,6 @@ export const openApiSpec = {
     { name: 'Proofs', description: 'ZK proof generation and verification (funding, validity, fulfillment, range)' },
     { name: 'C-SPL', description: 'Confidential SPL token operations (wrap, unwrap, transfer)' },
     { name: 'Arcium', description: 'Arcium MPC compute backend — submit computations, poll status, decrypt results' },
+    { name: 'Inco', description: 'Inco FHE compute backend — encrypt values, compute on ciphertexts, decrypt results' },
   ],
 }
