@@ -111,6 +111,11 @@ app.get('/', (_req, res) => {
       rpc: {
         providers: 'GET /v1/rpc/providers',
       },
+      backends: {
+        list: 'GET /v1/backends',
+        health: 'GET /v1/backends/:id/health',
+        select: 'POST /v1/backends/select',
+      },
       proofs: {
         fundingGenerate: 'POST /v1/proofs/funding/generate',
         fundingVerify: 'POST /v1/proofs/funding/verify',
