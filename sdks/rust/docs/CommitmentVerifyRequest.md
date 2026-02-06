@@ -1,0 +1,13 @@
+# CommitmentVerifyRequest
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**commitment** | **String** |  | 
+**value** | **String** |  | 
+**blinding_factor** | **String** | 0x-prefixed 32-byte hex string | 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
