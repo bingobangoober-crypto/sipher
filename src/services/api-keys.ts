@@ -283,6 +283,15 @@ export function isEndpointAllowed(tier: ApiKeyTier, path: string): boolean {
   })
 }
 
+export function updateApiKeyMetadata(id: string, metadata: Record<string, unknown>): boolean {
+  initApiKeyService()
+  const config = store.keys[id]
+  if (!config) return false
+  config.metadata = { ...config.metadata, ...metadata }
+  saveStore()
+  return true
+}
+
 // Reset for testing
 export function resetApiKeyService(): void {
   store = { keys: {}, usage: {} }
