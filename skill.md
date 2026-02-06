@@ -1,6 +1,6 @@
-# Sipher — Privacy-as-a-Skill for Solana Agents
+# Sipher — Privacy-as-a-Skill for Multi-Chain Agents
 
-> Add stealth addresses, hidden amounts, and compliance viewing keys to any Solana transaction.
+> Add stealth addresses, hidden amounts, and compliance viewing keys to blockchain transactions across 17 chains.
 
 **Base URL:** `https://sipher.sip-protocol.org`
 **Auth:** `X-API-Key: <your-key>` header (skip for `GET /`, `GET /skill.md`, `GET /v1/health`, `GET /v1/ready`, `GET /v1/errors`)
@@ -13,16 +13,27 @@
 
 Sipher wraps [SIP Protocol](https://sip-protocol.org)'s privacy SDK as a REST API. Any autonomous agent can call these endpoints to:
 
-1. **Generate stealth addresses** — one-time recipient addresses that prevent on-chain linkability
+1. **Generate multi-chain stealth addresses** — one-time recipient addresses for 17 chains (Solana, NEAR, Ethereum, Cosmos, Bitcoin, Move)
 2. **Create shielded transfers** — build unsigned Solana transactions with hidden recipients via stealth addresses and hidden amounts via Pedersen commitments
 3. **Scan for payments** — detect incoming shielded payments using viewing keys
 4. **Selective disclosure** — encrypt/decrypt transaction data for auditors/compliance using viewing keys
 5. **Homomorphic commitment math** — add and subtract commitments without revealing values
 
 All privacy operations use:
-- **Stealth addresses** (ed25519 DKSAP) — unlinkable one-time addresses
+- **Stealth addresses** — unlinkable one-time addresses (ed25519 for Solana/NEAR/Move, secp256k1 for EVM/Cosmos/Bitcoin)
 - **Pedersen commitments** — homomorphic commitments hiding amounts
 - **Viewing keys** — selective disclosure for compliance without revealing spending power
+
+### Supported Chains (17 total)
+
+| Chain Family | Chains | Curve |
+|-------------|--------|-------|
+| **Solana** | solana | ed25519 |
+| **NEAR** | near | ed25519 |
+| **Move** | aptos, sui | ed25519 |
+| **EVM** | ethereum, polygon, arbitrum, optimism, base | secp256k1 |
+| **Cosmos** | cosmos, osmosis, injective, celestia, sei, dydx | secp256k1 |
+| **Bitcoin** | bitcoin, zcash | secp256k1 |
 
 ---
 
@@ -50,10 +61,17 @@ GET /docs             → Interactive Swagger UI
 POST /v1/stealth/generate
 Content-Type: application/json
 
-{ "label": "My Agent Wallet" }
+{
+  "chain": "solana",
+  "label": "My Agent Wallet"
+}
 ```
 
-Returns: `metaAddress` (spending + viewing public keys), `spendingPrivateKey`, `viewingPrivateKey`
+**Parameters:**
+- `chain` — Target blockchain (default: `solana`). See supported chains above.
+- `label` — Optional human-readable label.
+
+Returns: `metaAddress` (spending + viewing public keys), `spendingPrivateKey`, `viewingPrivateKey`, `chain`, `curve`
 
 #### Derive One-Time Stealth Address
 

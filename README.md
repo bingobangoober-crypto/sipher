@@ -1,18 +1,19 @@
 # Sipher
 
-**Privacy-as-a-Skill REST API for Solana Agents** — powered by [SIP Protocol](https://sip-protocol.org)
+**Privacy-as-a-Skill REST API for Multi-Chain Agents** — powered by [SIP Protocol](https://sip-protocol.org)
 
-Any autonomous agent can call Sipher to add stealth addresses, hidden amounts, and compliance viewing keys to Solana transactions.
+Any autonomous agent can call Sipher to add stealth addresses, hidden amounts, and compliance viewing keys to blockchain transactions across 17 chains.
 
-[![Tests](https://img.shields.io/badge/tests-249%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-273%20passing-brightgreen)](tests/)
 [![Endpoints](https://img.shields.io/badge/endpoints-70-blue)](skill.md)
+[![Chains](https://img.shields.io/badge/chains-17-purple)](skill.md)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ## What It Does
 
 | Capability | Description |
 |-----------|-------------|
-| **Stealth Addresses** | Generate one-time recipient addresses (ed25519 DKSAP) — prevents on-chain linkability |
+| **Multi-Chain Stealth** | Generate stealth addresses for 17 chains (Solana, NEAR, Ethereum, Cosmos, Bitcoin, Move) |
 | **Shielded Transfers** | Build unsigned Solana transactions with hidden recipients + Pedersen commitments |
 | **Payment Scanning** | Detect incoming shielded payments using viewing keys |
 | **Selective Disclosure** | Encrypt transaction data for auditors/compliance without revealing spending power |
@@ -29,7 +30,7 @@ pnpm install
 # Dev server (with Redis optional)
 pnpm dev
 
-# Run tests (249 tests)
+# Run tests (273 tests)
 pnpm test -- --run
 
 # Type check
@@ -46,7 +47,7 @@ pnpm build
 | Category | Endpoints | Description |
 |----------|-----------|-------------|
 | **Health** | `/v1/health`, `/v1/ready`, `/v1/errors` | Status, readiness, error catalog |
-| **Stealth** | `/v1/stealth/generate`, `/derive`, `/check`, `/generate/batch` | Stealth address operations |
+| **Stealth** | `/v1/stealth/generate`, `/derive`, `/check`, `/generate/batch` | Multi-chain stealth addresses (17 chains) |
 | **Transfer** | `/v1/transfer/shield`, `/claim` | Shielded SOL/SPL transfers |
 | **Scan** | `/v1/scan/payments`, `/payments/batch` | Payment detection |
 | **Commitment** | `/v1/commitment/create`, `/verify`, `/add`, `/subtract`, `/create/batch` | Pedersen commitments |
@@ -114,7 +115,7 @@ Agent (Claude, LangChain, OpenClaw, etc.)
 | **Blockchain** | @solana/web3.js, @solana/spl-token |
 | **Validation** | Zod |
 | **Logging** | Pino (structured JSON) |
-| **Testing** | Vitest + Supertest (249 tests) |
+| **Testing** | Vitest + Supertest (273 tests) |
 | **Deploy** | Docker + GHCR + GitHub Actions |
 | **Docs** | OpenAPI 3.1 + Swagger UI |
 

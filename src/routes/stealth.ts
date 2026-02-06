@@ -1,47 +1,71 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import {
-  generateEd25519StealthMetaAddress,
-  generateEd25519StealthAddress,
-  checkEd25519StealthAddress,
+  generateStealthMetaAddress,
+  generateStealthAddress,
+  checkStealthAddress,
+  isEd25519Chain,
 } from '@sip-protocol/sdk'
-import type { StealthMetaAddress, HexString } from '@sip-protocol/types'
+import type { StealthMetaAddress, HexString, ChainId } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
 
 const router = Router()
 
+// ─── Supported Chains ────────────────────────────────────────────────────────
+
+// Ed25519 chains: 32-byte keys (64 hex chars)
+// Secp256k1 chains: 33-byte compressed keys (66 hex chars)
+// SDK-supported chains (matches @sip-protocol/sdk VALID_CHAIN_IDS)
+// Ed25519 chains: 32-byte keys (64 hex chars)
+// Secp256k1 chains: 33-byte compressed keys (66 hex chars)
+const SUPPORTED_CHAINS = [
+  'solana', 'near', 'aptos', 'sui',  // ed25519
+  'ethereum', 'polygon', 'arbitrum', 'optimism', 'base',  // secp256k1 EVM
+  'bitcoin', 'zcash',  // secp256k1 Bitcoin-like
+  'cosmos', 'osmosis', 'injective', 'celestia', 'sei', 'dydx',  // secp256k1 Cosmos
+] as const
+
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
-const hexString = z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'Must be a 0x-prefixed 32-byte hex string')
+// Hex validation
+// - ed25519: 32-byte keys (64 hex chars) for Solana, NEAR, Aptos, Sui
+// - secp256k1: 33-byte compressed keys (66 hex chars) for EVM, Cosmos, Bitcoin
+const hexString32 = z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'Must be 0x-prefixed 32-byte hex (ed25519)')
+const hexStringAny = z.string().regex(/^0x[0-9a-fA-F]{64,66}$/, 'Must be 0x-prefixed 32-byte (ed25519) or 33-byte (secp256k1) hex')
 
 const BATCH_MAX = 100
 
+const chainEnum = z.enum(SUPPORTED_CHAINS)
+
 const generateSchema = z.object({
+  chain: chainEnum.default('solana'),
   label: z.string().optional(),
 })
 
 const batchGenerateSchema = z.object({
+  chain: chainEnum.default('solana'),
   count: z.number().int().min(1).max(BATCH_MAX),
   label: z.string().optional(),
 })
 
 const deriveSchema = z.object({
   recipientMetaAddress: z.object({
-    spendingKey: hexString,
-    viewingKey: hexString,
-    chain: z.literal('solana'),
+    spendingKey: hexStringAny,
+    viewingKey: hexStringAny,
+    chain: chainEnum,
     label: z.string().optional(),
   }),
 })
 
 const checkSchema = z.object({
   stealthAddress: z.object({
-    address: hexString,
-    ephemeralPublicKey: hexString,
+    address: hexStringAny,
+    ephemeralPublicKey: hexStringAny,
     viewTag: z.number().int().min(0).max(255),
   }),
-  spendingPrivateKey: hexString,
-  viewingPrivateKey: hexString,
+  spendingPrivateKey: hexString32,  // Private keys are always 32 bytes
+  viewingPrivateKey: hexString32,
+  chain: chainEnum.default('solana'),
 })
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
@@ -51,9 +75,9 @@ router.post(
   validateRequest({ body: generateSchema }),
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { label } = req.body
+      const { chain, label } = req.body
 
-      const result = generateEd25519StealthMetaAddress('solana', label)
+      const result = generateStealthMetaAddress(chain as ChainId, label)
 
       res.json({
         success: true,
@@ -61,6 +85,8 @@ router.post(
           metaAddress: result.metaAddress,
           spendingPrivateKey: result.spendingPrivateKey,
           viewingPrivateKey: result.viewingPrivateKey,
+          chain,
+          curve: isEd25519Chain(chain) ? 'ed25519' : 'secp256k1',
         },
       })
     } catch (err) {
@@ -79,17 +105,19 @@ router.post(
       const meta: StealthMetaAddress = {
         spendingKey: recipientMetaAddress.spendingKey as HexString,
         viewingKey: recipientMetaAddress.viewingKey as HexString,
-        chain: recipientMetaAddress.chain,
+        chain: recipientMetaAddress.chain as ChainId,
         label: recipientMetaAddress.label,
       }
 
-      const result = generateEd25519StealthAddress(meta)
+      const result = generateStealthAddress(meta)
 
       res.json({
         success: true,
         data: {
           stealthAddress: result.stealthAddress,
           sharedSecret: result.sharedSecret,
+          chain: recipientMetaAddress.chain,
+          curve: isEd25519Chain(recipientMetaAddress.chain) ? 'ed25519' : 'secp256k1',
         },
       })
     } catch (err) {
@@ -103,9 +131,10 @@ router.post(
   validateRequest({ body: checkSchema }),
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { stealthAddress, spendingPrivateKey, viewingPrivateKey } = req.body
+      const { stealthAddress, spendingPrivateKey, viewingPrivateKey, chain } = req.body
 
-      const isOwner = checkEd25519StealthAddress(
+      // Auto-detects curve from address length (64 hex = ed25519, 66 hex = secp256k1)
+      const isOwner = checkStealthAddress(
         {
           address: stealthAddress.address as HexString,
           ephemeralPublicKey: stealthAddress.ephemeralPublicKey as HexString,
@@ -115,9 +144,17 @@ router.post(
         viewingPrivateKey as HexString
       )
 
+      // Detect curve from address length
+      const addressHexLen = stealthAddress.address.slice(2).length
+      const detectedCurve = addressHexLen === 64 ? 'ed25519' : 'secp256k1'
+
       res.json({
         success: true,
-        data: { isOwner },
+        data: {
+          isOwner,
+          chain,
+          curve: detectedCurve,
+        },
       })
     } catch (err) {
       next(err)
@@ -132,7 +169,7 @@ router.post(
   validateRequest({ body: batchGenerateSchema }),
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { count, label } = req.body
+      const { chain, count, label } = req.body
 
       const results: Array<{
         index: number
@@ -143,7 +180,7 @@ router.post(
 
       for (let i = 0; i < count; i++) {
         try {
-          const result = generateEd25519StealthMetaAddress('solana', label)
+          const result = generateStealthMetaAddress(chain as ChainId, label)
           results.push({
             index: i,
             success: true,
@@ -170,6 +207,8 @@ router.post(
         data: {
           results,
           summary: { total: count, succeeded, failed },
+          chain,
+          curve: isEd25519Chain(chain) ? 'ed25519' : 'secp256k1',
         },
       })
     } catch (err) {
