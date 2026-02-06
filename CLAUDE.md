@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 76 endpoints | 333 tests | 17 chains supported
+**Stats:** 79 endpoints | 351 tests | 17 chains supported
 
 ---
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (333 tests)
+pnpm test -- --run              # Run tests (351 tests, 19 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 
@@ -246,6 +246,7 @@ sipher/
 │   │   ├── rpc.ts                  # GET /v1/rpc/providers (provider info)
 │   │   ├── range-proof.ts          # STARK range proofs (generate, verify)
 │   │   ├── backends.ts             # Privacy backend registry (list, health, select)
+│   │   ├── arcium.ts               # Arcium MPC (compute, status, decrypt)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
 │   │   ├── solana.ts               # Connection manager + RPC latency measurement
@@ -253,7 +254,9 @@ sipher/
 │   │   ├── transaction-builder.ts  # Unsigned tx serialization (Solana)
 │   │   ├── chain-transfer-builder.ts # Chain-agnostic transfer dispatch (Solana/EVM/NEAR)
 │   │   ├── stark-provider.ts       # STARK range proof provider (M31 limbs, mock prover)
-│   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNativeBackend)
+│   │   ├── arcium-provider.ts      # Arcium MPC mock provider (state machine, LRU cache)
+│   │   ├── arcium-backend.ts       # Arcium PrivacyBackend implementation (compute type)
+│   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium)
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
@@ -261,7 +264,7 @@ sipher/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
-├── tests/                          # 316 tests across 18+ suites
+├── tests/                          # 351 tests across 19+ suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -280,7 +283,8 @@ sipher/
 │   ├── rpc-provider.test.ts        # 14 tests (factory, providers, masking, endpoint)
 │   ├── private-transfer.test.ts   # 25 tests (Solana/EVM/NEAR, unsupported, validation, idempotency)
 │   ├── range-proof.test.ts        # 18 tests (generate, verify, edge cases, idempotency, M31 math)
-│   └── backends.test.ts           # 17 tests (list, health, select, edge cases)
+│   ├── backends.test.ts           # 17 tests (list, health, select, edge cases)
+│   └── arcium.test.ts             # 18 tests (compute, status, decrypt, idempotency, backend)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -293,7 +297,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (32 endpoints)
+## API ENDPOINTS (35 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -332,6 +336,9 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | POST | `/v1/backends/select` | Set preferred backend per API key | Yes | — |
 | POST | `/v1/privacy/score` | Wallet privacy/surveillance score (0-100) | Yes | — |
 | GET | `/v1/rpc/providers` | Active RPC provider info + supported list | No | — |
+| POST | `/v1/arcium/compute` | Submit MPC computation to Arcium cluster | Yes | ✓ |
+| GET | `/v1/arcium/compute/:id/status` | Poll computation status (state machine) | Yes | — |
+| POST | `/v1/arcium/decrypt` | Decrypt completed computation with viewing key | Yes | — |
 
 ### Idempotency
 
@@ -374,6 +381,9 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 | **404** | NOT_FOUND |
 | **429** | RATE_LIMITED |
 | **500** | INTERNAL_SERVER_ERROR, STEALTH_GENERATION_FAILED, COMMITMENT_FAILED, TRANSFER_BUILD_FAILED, TRANSFER_CLAIM_FAILED, SCAN_FAILED, VIEWING_KEY_FAILED, ENCRYPTION_FAILED, DECRYPTION_FAILED |
+| **500** | ARCIUM_COMPUTATION_FAILED |
+| **404** | ARCIUM_COMPUTATION_NOT_FOUND |
+| **400** | ARCIUM_DECRYPT_FAILED |
 | **503** | SERVICE_UNAVAILABLE, SOLANA_RPC_UNAVAILABLE |
 
 ---
@@ -440,11 +450,11 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | 🔲 Planned |
 | 6 | Enterprise | 6 | 🔲 Planned |
 
-**Progress:** 29/38 issues complete | 333 tests | 76 endpoints | 17 chains
+**Progress:** 29/38 issues complete | 351 tests | 79 endpoints | 17 chains
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-06
-**Status:** Phase 5 In Progress | 73 Endpoints | 316 Tests | 17 Chains | Agent #274 Active
+**Status:** Phase 5 In Progress | 79 Endpoints | 351 Tests | 17 Chains | Agent #274 Active

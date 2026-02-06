@@ -566,6 +566,62 @@ Sets the preferred privacy backend for your API key. Requires a tiered API key (
 
 ---
 
+### Arcium MPC Compute (Beta)
+
+Submit encrypted computations to the Arcium MPC cluster. Status progresses: submitted → encrypting → processing → finalizing → completed.
+
+#### Submit Computation
+
+```
+POST /v1/arcium/compute
+Content-Type: application/json
+
+{
+  "circuitId": "private_transfer",
+  "encryptedInputs": ["0xdeadbeef", "0xcafebabe"],
+  "chain": "solana",
+  "cipher": "aes256"
+}
+```
+
+**Parameters:**
+- `circuitId` — Circuit: `private_transfer` (2 inputs), `check_balance` (1 input), `validate_swap` (3 inputs)
+- `encryptedInputs` — Hex-encoded encrypted inputs (1-10)
+- `chain` — Target chain (default: `solana`)
+- `cipher` — Encryption cipher: `aes128`, `aes192`, `aes256`, `rescue` (default: `aes256`)
+
+Returns: `computationId` (arc_...), `status`, `estimatedCompletion`, `supportedCircuits`.
+
+Supports `Idempotency-Key` header.
+
+#### Poll Status
+
+```
+GET /v1/arcium/compute/:id/status
+```
+
+Returns: `computationId`, `status`, `progress` (0-100), `output` (only when completed), `proof` (only when completed).
+
+#### Decrypt Result
+
+```
+POST /v1/arcium/decrypt
+Content-Type: application/json
+
+{
+  "computationId": "arc_...",
+  "viewingKey": {
+    "key": "0x...",
+    "path": "m/44/501/0",
+    "hash": "0x..."
+  }
+}
+```
+
+Returns: `decryptedOutput`, `verificationHash`, `circuitId`.
+
+---
+
 ## Idempotency
 
 Mutation endpoints (`/transfer/shield`, `/transfer/claim`, `/transfer/private`, `/commitment/create`, `/viewing-key/disclose`) support the `Idempotency-Key` header. Send a UUID v4 value to safely retry requests — duplicate keys return the cached response with `Idempotency-Replayed: true` header.
