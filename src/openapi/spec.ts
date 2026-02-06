@@ -2275,6 +2275,162 @@ export const openApiSpec = {
         },
       },
     },
+  // ─── Arcium MPC ──────────────────────────────────────────────────────────
+    '/v1/arcium/compute': {
+      post: {
+        tags: ['Arcium'],
+        operationId: 'submitArciumComputation',
+        summary: 'Submit MPC computation',
+        description: 'Submit an encrypted computation to the Arcium MPC cluster. Returns a computation ID for status polling.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  circuitId: { type: 'string', enum: ['private_transfer', 'check_balance', 'validate_swap'], description: 'Circuit identifier' },
+                  encryptedInputs: { type: 'array', items: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' }, minItems: 1, maxItems: 10, description: 'Encrypted inputs as hex strings' },
+                  chain: { type: 'string', default: 'solana', description: 'Target chain' },
+                  cipher: { type: 'string', enum: ['aes128', 'aes192', 'aes256', 'rescue'], default: 'aes256' },
+                  viewingKey: { type: 'object', properties: { key: { type: 'string' }, path: { type: 'string' }, hash: { type: 'string' } } },
+                  cluster: { type: 'string', description: 'MPC cluster to use' },
+                  timeout: { type: 'integer', description: 'Timeout in milliseconds' },
+                },
+                required: ['circuitId', 'encryptedInputs'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Computation submitted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    warning: { type: 'string' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        computationId: { type: 'string', pattern: '^arc_[0-9a-fA-F]{64}$' },
+                        status: { type: 'string', enum: ['submitted'] },
+                        estimatedCompletion: { type: 'integer' },
+                        circuitId: { type: 'string' },
+                        chain: { type: 'string' },
+                        inputCount: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/arcium/compute/{id}/status': {
+      get: {
+        tags: ['Arcium'],
+        operationId: 'getArciumComputationStatus',
+        summary: 'Get computation status',
+        description: 'Poll the status of an MPC computation. Status progresses: submitted → encrypting → processing → finalizing → completed.',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', pattern: '^arc_[0-9a-fA-F]{64}$' }, description: 'Computation ID' },
+        ],
+        responses: {
+          200: {
+            description: 'Computation status',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        computationId: { type: 'string' },
+                        circuitId: { type: 'string' },
+                        chain: { type: 'string' },
+                        status: { type: 'string', enum: ['submitted', 'encrypting', 'processing', 'finalizing', 'completed'] },
+                        progress: { type: 'integer', minimum: 0, maximum: 100 },
+                        output: { type: 'string', description: 'Only present when status is completed' },
+                        proof: { type: 'string', description: 'Only present when status is completed' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: 'Computation not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/arcium/decrypt': {
+      post: {
+        tags: ['Arcium'],
+        operationId: 'decryptArciumResult',
+        summary: 'Decrypt computation result',
+        description: 'Decrypt the output of a completed MPC computation using a viewing key.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  computationId: { type: 'string', pattern: '^arc_[0-9a-fA-F]{64}$' },
+                  viewingKey: {
+                    type: 'object',
+                    properties: {
+                      key: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                      path: { type: 'string' },
+                      hash: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                    },
+                    required: ['key', 'path', 'hash'],
+                  },
+                },
+                required: ['computationId', 'viewingKey'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Decryption result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    beta: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        computationId: { type: 'string' },
+                        circuitId: { type: 'string' },
+                        decryptedOutput: { type: 'string' },
+                        verificationHash: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Decrypt failed or computation incomplete', content: { 'application/json': { schema: errorResponse } } },
+          404: { description: 'Computation not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
   },
   tags: [
     { name: 'Health', description: 'Server health, readiness, and error catalog' },
@@ -2288,5 +2444,6 @@ export const openApiSpec = {
     { name: 'Backends', description: 'Privacy backend registry, health monitoring, and selection' },
     { name: 'Proofs', description: 'ZK proof generation and verification (funding, validity, fulfillment, range)' },
     { name: 'C-SPL', description: 'Confidential SPL token operations (wrap, unwrap, transfer)' },
+    { name: 'Arcium', description: 'Arcium MPC compute backend — submit computations, poll status, decrypt results' },
   ],
 }
