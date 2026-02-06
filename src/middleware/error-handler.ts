@@ -41,6 +41,40 @@ export function errorHandler(
     return
   }
 
+  // Handle Governance errors
+  if (err.name === 'GovernanceDoubleVoteError') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: ErrorCode.GOVERNANCE_DOUBLE_VOTE,
+        message: err.message,
+      },
+    })
+    return
+  }
+
+  if (err.name === 'GovernanceProposalNotFoundError') {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: ErrorCode.GOVERNANCE_PROPOSAL_NOT_FOUND,
+        message: err.message,
+      },
+    })
+    return
+  }
+
+  if (err.name === 'GovernanceTallyError') {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: ErrorCode.GOVERNANCE_TALLY_FAILED,
+        message: err.message,
+      },
+    })
+    return
+  }
+
   // Handle SIP SDK ValidationError
   if (err.name === 'ValidationError' || (err as any).code?.startsWith?.('VALIDATION')) {
     res.status(400).json({

@@ -81,6 +81,18 @@ export enum ErrorCode {
   // 404 — Compliance
   COMPLIANCE_REPORT_NOT_FOUND = 'COMPLIANCE_REPORT_NOT_FOUND',
 
+  // 500 — Governance
+  GOVERNANCE_ENCRYPT_FAILED = 'GOVERNANCE_ENCRYPT_FAILED',
+  GOVERNANCE_SUBMIT_FAILED = 'GOVERNANCE_SUBMIT_FAILED',
+  GOVERNANCE_TALLY_FAILED = 'GOVERNANCE_TALLY_FAILED',
+
+  // 404 — Governance
+  GOVERNANCE_TALLY_NOT_FOUND = 'GOVERNANCE_TALLY_NOT_FOUND',
+  GOVERNANCE_PROPOSAL_NOT_FOUND = 'GOVERNANCE_PROPOSAL_NOT_FOUND',
+
+  // 409 — Governance
+  GOVERNANCE_DOUBLE_VOTE = 'GOVERNANCE_DOUBLE_VOTE',
+
   // 404 — Session
   SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
 
@@ -368,6 +380,48 @@ export const ERROR_CATALOG: ErrorCatalogEntry[] = [
     code: ErrorCode.COMPLIANCE_REPORT_NOT_FOUND,
     httpStatus: 404,
     description: 'Compliance report not found. The report ID may be expired or invalid.',
+    retryable: false,
+  },
+
+  // 500 — Governance
+  {
+    code: ErrorCode.GOVERNANCE_ENCRYPT_FAILED,
+    httpStatus: 500,
+    description: 'Governance ballot encryption failed.',
+    retryable: true,
+  },
+  {
+    code: ErrorCode.GOVERNANCE_SUBMIT_FAILED,
+    httpStatus: 500,
+    description: 'Governance ballot submission failed.',
+    retryable: true,
+  },
+  {
+    code: ErrorCode.GOVERNANCE_TALLY_FAILED,
+    httpStatus: 500,
+    description: 'Governance vote tally failed. The homomorphic sum may have encountered an error.',
+    retryable: true,
+  },
+
+  // 404 — Governance
+  {
+    code: ErrorCode.GOVERNANCE_TALLY_NOT_FOUND,
+    httpStatus: 404,
+    description: 'Tally not found. The tally ID may be expired or invalid.',
+    retryable: false,
+  },
+  {
+    code: ErrorCode.GOVERNANCE_PROPOSAL_NOT_FOUND,
+    httpStatus: 404,
+    description: 'Proposal not found. No ballots have been submitted for this proposal ID.',
+    retryable: false,
+  },
+
+  // 409 — Governance
+  {
+    code: ErrorCode.GOVERNANCE_DOUBLE_VOTE,
+    httpStatus: 409,
+    description: 'Duplicate vote detected. The nullifier has already been used for this proposal.',
     retryable: false,
   },
 

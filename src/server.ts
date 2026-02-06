@@ -158,6 +158,12 @@ app.get('/', (_req, res) => {
         report: 'POST /v1/compliance/report',
         getReport: 'GET /v1/compliance/report/:id',
       },
+      governance: {
+        encryptBallot: 'POST /v1/governance/ballot/encrypt',
+        submitBallot: 'POST /v1/governance/ballot/submit',
+        tally: 'POST /v1/governance/tally',
+        getTally: 'GET /v1/governance/tally/:id',
+      },
       admin: {
         listKeys: 'GET /v1/admin/keys',
         createKey: 'POST /v1/admin/keys',

@@ -19,6 +19,7 @@ const SENSITIVE_KEYS = new Set([
   'inputAmount',
   'swapTransaction',
   'defaultViewingKey',
+  'voterSecret',
 ])
 
 function sanitizeBody(body: unknown): unknown {
