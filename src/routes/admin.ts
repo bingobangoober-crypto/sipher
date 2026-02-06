@@ -59,8 +59,8 @@ router.post('/keys', validateRequest(createKeySchema), (req, res) => {
       createdAt: key.createdAt,
       expiresAt: key.expiresAt,
       limits: getTierLimits(tier),
+      notice: 'Store this key securely — it will only be shown once.',
     },
-    message: 'API key created. Store this key securely - it will only be shown once.',
   })
 })
 
@@ -111,7 +111,7 @@ router.delete('/keys/:id', (req, res) => {
 
   res.json({
     success: true,
-    message: 'API key revoked',
+    data: { revoked: true },
   })
 })
 
