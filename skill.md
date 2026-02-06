@@ -564,6 +564,29 @@ Content-Type: application/json
 
 Sets the preferred privacy backend for your API key. Requires a tiered API key (Free/Pro/Enterprise). Returns: `keyId`, `preferredBackend`.
 
+#### Compare Backends
+
+```
+POST /v1/backends/compare
+Content-Type: application/json
+
+{
+  "operation": "stealth_privacy",
+  "chain": "solana",
+  "prioritize": "cost"
+}
+```
+
+**Parameters:**
+- `operation` — `stealth_privacy`, `encrypted_compute`, or `compliance_audit`
+- `chain` — Target blockchain (default: `solana`)
+- `amount` — Optional transaction amount in smallest units
+- `prioritize` — Optional: `cost`, `speed`, or `privacy` (adjusts scoring weights to 60%)
+
+Returns: `comparisons[]` (backend, type, available, costLamports, costSOL, latencyMs, latencyCategory, privacyLevel, capabilities, score 0-100, recommended), `recommendation` (best_overall, best_value, fastest, most_private, reasoning).
+
+Scoring: cost 40%, latency 30%, privacy 30% (default). Use `prioritize` to shift weights.
+
 ---
 
 ### Arcium MPC Compute (Beta)

@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 83 endpoints | 391 tests | 17 chains supported
+**Stats:** 84 endpoints | 414 tests | 17 chains supported
 
 ---
 
@@ -55,7 +55,7 @@
 - **Logging:** Pino v9 (structured JSON, audit logs)
 - **Docs:** swagger-ui-express (OpenAPI 3.1)
 - **Cache:** Redis 7 (rate limiting, idempotency) with in-memory fallback
-- **Testing:** Vitest + Supertest (391 tests)
+- **Testing:** Vitest + Supertest (414 tests)
 - **Deployment:** Docker + GHCR → VPS (port 5006)
 - **Domain:** sipher.sip-protocol.org
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (391 tests, 22 suites)
+pnpm test -- --run              # Run tests (414 tests, 22 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 
@@ -262,6 +262,7 @@ sipher/
 │   │   ├── inco-backend.ts        # Inco PrivacyBackend implementation (compute type)
 │   │   ├── jupiter-provider.ts    # Jupiter DEX mock provider (quotes, swap transactions)
 │   │   ├── private-swap-builder.ts # Private swap orchestrator (stealth + C-SPL + Jupiter)
+│   │   ├── backend-comparison.ts  # Backend comparison service (scoring, caching, recommendations)
 │   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium + Inco)
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
@@ -270,7 +271,7 @@ sipher/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
-├── tests/                          # 391 tests across 22+ suites
+├── tests/                          # 414 tests across 22+ suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -292,7 +293,8 @@ sipher/
 │   ├── backends.test.ts           # 17 tests (list, health, select, edge cases)
 │   ├── arcium.test.ts             # 18 tests (compute, status, decrypt, idempotency, backend)
 │   ├── inco.test.ts               # 20 tests (encrypt, compute, decrypt, idempotency, backend, E2E)
-│   └── private-swap.test.ts       # 20 tests (happy path, swap details, validation, idempotency, beta, E2E)
+│   ├── private-swap.test.ts       # 20 tests (happy path, swap details, validation, idempotency, beta, E2E)
+│   └── backend-comparison.test.ts # 23 tests (basic, scoring, prioritize, validation, cache, edge cases)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -305,7 +307,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (39 endpoints)
+## API ENDPOINTS (40 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -342,6 +344,7 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | GET | `/v1/backends` | List privacy backends with capabilities and health | Yes | — |
 | GET | `/v1/backends/:id/health` | Per-backend health check with metrics | Yes | — |
 | POST | `/v1/backends/select` | Set preferred backend per API key | Yes | — |
+| POST | `/v1/backends/compare` | Compare backends for operation (cost, latency, privacy, recommendations) | Yes | — |
 | POST | `/v1/privacy/score` | Wallet privacy/surveillance score (0-100) | Yes | — |
 | GET | `/v1/rpc/providers` | Active RPC provider info + supported list | No | — |
 | POST | `/v1/arcium/compute` | Submit MPC computation to Arcium cluster | Yes | ✓ |
@@ -420,7 +423,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (391 tests must pass)
+- Run `pnpm test -- --run` after code changes (414 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -467,11 +470,11 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | 🔲 Planned |
 | 6 | Enterprise | 6 | 🔲 Planned |
 
-**Progress:** 30/38 issues complete | 391 tests | 83 endpoints | 17 chains
+**Progress:** 31/38 issues complete | 414 tests | 84 endpoints | 17 chains
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-06
-**Status:** Phase 5 In Progress | 82 Endpoints | 371 Tests | 17 Chains | Agent #274 Active
+**Status:** Phase 5 In Progress | 84 Endpoints | 414 Tests | 17 Chains | Agent #274 Active
