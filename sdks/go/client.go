@@ -54,11 +54,15 @@ type APIClient struct {
 
 	BackendsAPI *BackendsAPIService
 
+	BillingUsageAPI *BillingUsageAPIService
+
 	CSPLAPI *CSPLAPIService
 
 	CommitmentAPI *CommitmentAPIService
 
 	ComplianceAPI *ComplianceAPIService
+
+	GasAbstractionAPI *GasAbstractionAPIService
 
 	GovernanceAPI *GovernanceAPIService
 
@@ -103,9 +107,11 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	// API Services
 	c.ArciumAPI = (*ArciumAPIService)(&c.common)
 	c.BackendsAPI = (*BackendsAPIService)(&c.common)
+	c.BillingUsageAPI = (*BillingUsageAPIService)(&c.common)
 	c.CSPLAPI = (*CSPLAPIService)(&c.common)
 	c.CommitmentAPI = (*CommitmentAPIService)(&c.common)
 	c.ComplianceAPI = (*ComplianceAPIService)(&c.common)
+	c.GasAbstractionAPI = (*GasAbstractionAPIService)(&c.common)
 	c.GovernanceAPI = (*GovernanceAPIService)(&c.common)
 	c.HealthAPI = (*HealthAPIService)(&c.common)
 	c.IncoAPI = (*IncoAPIService)(&c.common)

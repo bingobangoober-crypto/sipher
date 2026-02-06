@@ -60,6 +60,12 @@ tags:
 - description: "Privacy-preserving governance — encrypted ballots via Pedersen commitments,\
     \ nullifier-based double-vote prevention, and homomorphic vote tallying"
   name: Governance
+- description: Jito bundle relay for MEV-protected privacy transactions with optional
+    gas sponsorship
+  name: Gas Abstraction
+- description: "Stripe billing, subscription management, usage metering, and daily\
+    \ operation quotas"
+  name: Billing & Usage
 paths:
   /v1/health:
     get:
@@ -1717,6 +1723,224 @@ paths:
       summary: Get tally result
       tags:
       - Governance
+  /v1/jito/relay:
+    post:
+      description: Submit one or more transactions as a Jito bundle for MEV-protected
+        execution. Optionally enable gas sponsorship (enterprise tier).
+      operationId: submitJitoBundle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/submitJitoBundle_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/submitJitoBundle_200_response"
+          description: Bundle submitted successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error or invalid transaction
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Gas sponsorship requires enterprise tier
+      summary: Submit transaction(s) via Jito bundle
+      tags:
+      - Gas Abstraction
+  /v1/billing/usage:
+    get:
+      description: Returns daily operation usage broken down by category for the current
+        API key.
+      operationId: getBillingUsage
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getBillingUsage_200_response"
+          description: Usage data retrieved
+      summary: Get current period usage
+      tags:
+      - Billing & Usage
+  /v1/billing/subscription:
+    get:
+      description: Returns the current subscription details for the API key.
+      operationId: getBillingSubscription
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getBillingSubscription_200_response"
+          description: Subscription details
+      summary: Get current subscription
+      tags:
+      - Billing & Usage
+  /v1/billing/subscribe:
+    post:
+      description: Create a new subscription or change the plan of an existing active
+        subscription.
+      operationId: createBillingSubscription
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createBillingSubscription_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createBillingSubscription_200_response"
+          description: Subscription created or updated
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error
+      summary: Create or change subscription
+      tags:
+      - Billing & Usage
+  /v1/billing/invoices:
+    get:
+      description: Returns paginated invoices for the current API key.
+      operationId: listBillingInvoices
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 10
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listBillingInvoices_200_response"
+          description: Invoices retrieved
+      summary: List invoices
+      tags:
+      - Billing & Usage
+  /v1/billing/portal:
+    post:
+      description: Creates a Stripe customer portal session URL. Requires pro or enterprise
+        tier.
+      operationId: createBillingPortal
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createBillingPortal_200_response"
+          description: Portal session created
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tier access denied
+      summary: Generate customer portal URL
+      tags:
+      - Billing & Usage
+  /v1/billing/webhook:
+    post:
+      description: Receives and validates Stripe webhook events. Requires stripe-signature
+        header. Bypasses API key auth.
+      operationId: handleBillingWebhook
+      parameters:
+      - description: Stripe webhook signature for verification
+        explode: false
+        in: header
+        name: stripe-signature
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/handleBillingWebhook_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/handleBillingWebhook_200_response"
+          description: Webhook processed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid webhook signature
+      security: []
+      summary: Stripe webhook receiver
+      tags:
+      - Billing & Usage
+  /v1/jito/bundle/{id}:
+    get:
+      description: "Check the status of a previously submitted Jito bundle. Status\
+        \ progresses: submitted → bundled → confirming → confirmed."
+      operationId: getJitoBundleStatus
+      parameters:
+      - description: Jito bundle ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^jito_[0-9a-fA-F]{64}$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getJitoBundleStatus_200_response"
+          description: Bundle status retrieved
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid bundle ID format
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Bundle not found
+      summary: Poll bundle status
+      tags:
+      - Gas Abstraction
 components:
   parameters:
     SessionId:
@@ -6014,6 +6238,342 @@ components:
           type: boolean
         data:
           $ref: "#/components/schemas/getTally_200_response_data"
+    submitJitoBundle_request:
+      properties:
+        transactions:
+          description: Base64-encoded serialized Solana transactions
+          items:
+            minLength: 1
+            type: string
+          maxItems: 5
+          minItems: 1
+          type: array
+        tipLamports:
+          default: "10000"
+          description: Tip amount in lamports (minimum 1000)
+          pattern: "^[1-9]\\d*$"
+          type: string
+        gasSponsorship:
+          default: false
+          description: Enable gas sponsorship (enterprise tier only)
+          type: boolean
+      required:
+      - transactions
+    submitJitoBundle_200_response_data:
+      example:
+        tipLamports: tipLamports
+        estimatedConfirmation: 6
+        gasSponsored: true
+        signature: signature
+        bundleId: bundleId
+        tipAccount: tipAccount
+        slot: 0
+        status: submitted
+      properties:
+        bundleId:
+          pattern: "^jito_[0-9a-fA-F]{64}$"
+          type: string
+        status:
+          enum:
+          - submitted
+          type: string
+        tipAccount:
+          description: Jito tip account address
+          type: string
+        tipLamports:
+          type: string
+        gasSponsored:
+          type: boolean
+        slot:
+          type: integer
+        signature:
+          type: string
+        estimatedConfirmation:
+          type: integer
+    submitJitoBundle_200_response:
+      example:
+        data:
+          tipLamports: tipLamports
+          estimatedConfirmation: 6
+          gasSponsored: true
+          signature: signature
+          bundleId: bundleId
+          tipAccount: tipAccount
+          slot: 0
+          status: submitted
+        success: true
+        warning: warning
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
+        data:
+          $ref: "#/components/schemas/submitJitoBundle_200_response_data"
+    getBillingUsage_200_response_data_categories_value:
+      example:
+        quota: 5
+        count: 1
+      properties:
+        count:
+          type: integer
+        quota:
+          type: integer
+    getBillingUsage_200_response_data:
+      example:
+        date: 2000-01-23
+        total: 0
+        tier: free
+        categories:
+          key:
+            quota: 5
+            count: 1
+        quotaTotal: 6
+      properties:
+        date:
+          format: date
+          type: string
+        tier:
+          enum:
+          - free
+          - pro
+          - enterprise
+          type: string
+        total:
+          type: integer
+        quotaTotal:
+          type: integer
+        categories:
+          additionalProperties:
+            $ref: "#/components/schemas/getBillingUsage_200_response_data_categories_value"
+    getBillingUsage_200_response:
+      example:
+        data:
+          date: 2000-01-23
+          total: 0
+          tier: free
+          categories:
+            key:
+              quota: 5
+              count: 1
+          quotaTotal: 6
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getBillingUsage_200_response_data"
+    getBillingSubscription_200_response_data:
+      example:
+        currentPeriodStart: 2000-01-23T04:56:07.000+00:00
+        currentPeriodEnd: 2000-01-23T04:56:07.000+00:00
+        id: id
+        plan: free
+        status: active
+      properties:
+        id:
+          type: string
+        plan:
+          enum:
+          - free
+          - pro
+          - enterprise
+          type: string
+        status:
+          enum:
+          - active
+          - past_due
+          - canceled
+          type: string
+        currentPeriodStart:
+          format: date-time
+          type: string
+        currentPeriodEnd:
+          format: date-time
+          type: string
+    getBillingSubscription_200_response:
+      example:
+        data:
+          currentPeriodStart: 2000-01-23T04:56:07.000+00:00
+          currentPeriodEnd: 2000-01-23T04:56:07.000+00:00
+          id: id
+          plan: free
+          status: active
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getBillingSubscription_200_response_data"
+    createBillingSubscription_request:
+      properties:
+        plan:
+          enum:
+          - free
+          - pro
+          - enterprise
+          type: string
+      required:
+      - plan
+    createBillingSubscription_200_response:
+      example:
+        data: "{}"
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+    listBillingInvoices_200_response_data:
+      example:
+        total: 0
+        invoices:
+        - ""
+        - ""
+        offset: 1
+        limit: 6
+      properties:
+        invoices:
+          items: {}
+          type: array
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    listBillingInvoices_200_response:
+      example:
+        data:
+          total: 0
+          invoices:
+          - ""
+          - ""
+          offset: 1
+          limit: 6
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listBillingInvoices_200_response_data"
+    createBillingPortal_200_response_data:
+      example:
+        id: id
+        url: https://openapi-generator.tech
+        expiresAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          type: string
+        url:
+          format: uri
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+    createBillingPortal_200_response:
+      example:
+        data:
+          id: id
+          url: https://openapi-generator.tech
+          expiresAt: 2000-01-23T04:56:07.000+00:00
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/createBillingPortal_200_response_data"
+    handleBillingWebhook_request:
+      properties:
+        type:
+          enum:
+          - invoice.paid
+          - invoice.payment_failed
+          - customer.subscription.updated
+          - customer.subscription.deleted
+          type: string
+        data:
+          type: object
+      required:
+      - data
+      - type
+    handleBillingWebhook_200_response_data:
+      example:
+        eventId: eventId
+        processed: true
+        type: type
+      properties:
+        eventId:
+          type: string
+        type:
+          type: string
+        processed:
+          type: boolean
+    handleBillingWebhook_200_response:
+      example:
+        data:
+          eventId: eventId
+          processed: true
+          type: type
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/handleBillingWebhook_200_response_data"
+    getJitoBundleStatus_200_response_data:
+      example:
+        signature: signature
+        bundleId: bundleId
+        progress: 8
+        slot: 6
+        confirmedAt: 1
+        status: submitted
+      properties:
+        bundleId:
+          type: string
+        status:
+          enum:
+          - submitted
+          - bundled
+          - confirming
+          - confirmed
+          type: string
+        progress:
+          maximum: 100
+          minimum: 0
+          type: integer
+        slot:
+          type: integer
+        signature:
+          type: string
+        confirmedAt:
+          description: Present when status is confirmed
+          type: integer
+    getJitoBundleStatus_200_response:
+      example:
+        data:
+          signature: signature
+          bundleId: bundleId
+          progress: 8
+          slot: 6
+          confirmedAt: 1
+          status: submitted
+        success: true
+        warning: warning
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
+        data:
+          $ref: "#/components/schemas/getJitoBundleStatus_200_response_data"
   securitySchemes:
     ApiKeyAuth:
       description: "API key for authentication. Also accepts Authorization: Bearer\

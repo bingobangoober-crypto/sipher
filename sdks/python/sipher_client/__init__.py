@@ -21,9 +21,11 @@ __version__ = "0.1.0"
 __all__ = [
     "ArciumApi",
     "BackendsApi",
+    "BillingUsageApi",
     "CSPLApi",
     "CommitmentApi",
     "ComplianceApi",
+    "GasAbstractionApi",
     "GovernanceApi",
     "HealthApi",
     "IncoApi",
@@ -89,6 +91,10 @@ __all__ = [
     "ComputeIncoCiphertexts200Response",
     "ComputeIncoCiphertexts200ResponseData",
     "ComputeIncoCiphertextsRequest",
+    "CreateBillingPortal200Response",
+    "CreateBillingPortal200ResponseData",
+    "CreateBillingSubscription200Response",
+    "CreateBillingSubscriptionRequest",
     "CreateSession201Response",
     "CreateSession201ResponseData",
     "CreateSessionRequest",
@@ -122,6 +128,11 @@ __all__ = [
     "EvmTransferData",
     "GetArciumComputationStatus200Response",
     "GetArciumComputationStatus200ResponseData",
+    "GetBillingSubscription200Response",
+    "GetBillingSubscription200ResponseData",
+    "GetBillingUsage200Response",
+    "GetBillingUsage200ResponseData",
+    "GetBillingUsage200ResponseDataCategoriesValue",
     "GetComplianceReport200Response",
     "GetComplianceReport200ResponseData",
     "GetErrors200Response",
@@ -133,6 +144,8 @@ __all__ = [
     "GetHealth200ResponseDataSolana",
     "GetHealth503Response",
     "GetHealth503ResponseError",
+    "GetJitoBundleStatus200Response",
+    "GetJitoBundleStatus200ResponseData",
     "GetReady200Response",
     "GetReady200ResponseData",
     "GetReady200ResponseDataChecks",
@@ -144,6 +157,11 @@ __all__ = [
     "GetSession200ResponseData",
     "GetTally200Response",
     "GetTally200ResponseData",
+    "HandleBillingWebhook200Response",
+    "HandleBillingWebhook200ResponseData",
+    "HandleBillingWebhookRequest",
+    "ListBillingInvoices200Response",
+    "ListBillingInvoices200ResponseData",
     "NearTransferData",
     "NearTransferDataActionsInner",
     "PrivacyScore200Response",
@@ -213,6 +231,9 @@ __all__ = [
     "SubmitBallot200Response",
     "SubmitBallot200ResponseData",
     "SubmitBallotRequest",
+    "SubmitJitoBundle200Response",
+    "SubmitJitoBundle200ResponseData",
+    "SubmitJitoBundleRequest",
     "TallyVotes200Response",
     "TallyVotes200ResponseData",
     "TallyVotesRequest",
@@ -255,9 +276,11 @@ __all__ = [
 # import apis into sdk package
 from sipher_client.api.arcium_api import ArciumApi as ArciumApi
 from sipher_client.api.backends_api import BackendsApi as BackendsApi
+from sipher_client.api.billing_usage_api import BillingUsageApi as BillingUsageApi
 from sipher_client.api.cspl_api import CSPLApi as CSPLApi
 from sipher_client.api.commitment_api import CommitmentApi as CommitmentApi
 from sipher_client.api.compliance_api import ComplianceApi as ComplianceApi
+from sipher_client.api.gas_abstraction_api import GasAbstractionApi as GasAbstractionApi
 from sipher_client.api.governance_api import GovernanceApi as GovernanceApi
 from sipher_client.api.health_api import HealthApi as HealthApi
 from sipher_client.api.inco_api import IncoApi as IncoApi
@@ -327,6 +350,10 @@ from sipher_client.models.compliance_report_request import ComplianceReportReque
 from sipher_client.models.compute_inco_ciphertexts200_response import ComputeIncoCiphertexts200Response as ComputeIncoCiphertexts200Response
 from sipher_client.models.compute_inco_ciphertexts200_response_data import ComputeIncoCiphertexts200ResponseData as ComputeIncoCiphertexts200ResponseData
 from sipher_client.models.compute_inco_ciphertexts_request import ComputeIncoCiphertextsRequest as ComputeIncoCiphertextsRequest
+from sipher_client.models.create_billing_portal200_response import CreateBillingPortal200Response as CreateBillingPortal200Response
+from sipher_client.models.create_billing_portal200_response_data import CreateBillingPortal200ResponseData as CreateBillingPortal200ResponseData
+from sipher_client.models.create_billing_subscription200_response import CreateBillingSubscription200Response as CreateBillingSubscription200Response
+from sipher_client.models.create_billing_subscription_request import CreateBillingSubscriptionRequest as CreateBillingSubscriptionRequest
 from sipher_client.models.create_session201_response import CreateSession201Response as CreateSession201Response
 from sipher_client.models.create_session201_response_data import CreateSession201ResponseData as CreateSession201ResponseData
 from sipher_client.models.create_session_request import CreateSessionRequest as CreateSessionRequest
@@ -360,6 +387,11 @@ from sipher_client.models.error_response import ErrorResponse as ErrorResponse
 from sipher_client.models.evm_transfer_data import EvmTransferData as EvmTransferData
 from sipher_client.models.get_arcium_computation_status200_response import GetArciumComputationStatus200Response as GetArciumComputationStatus200Response
 from sipher_client.models.get_arcium_computation_status200_response_data import GetArciumComputationStatus200ResponseData as GetArciumComputationStatus200ResponseData
+from sipher_client.models.get_billing_subscription200_response import GetBillingSubscription200Response as GetBillingSubscription200Response
+from sipher_client.models.get_billing_subscription200_response_data import GetBillingSubscription200ResponseData as GetBillingSubscription200ResponseData
+from sipher_client.models.get_billing_usage200_response import GetBillingUsage200Response as GetBillingUsage200Response
+from sipher_client.models.get_billing_usage200_response_data import GetBillingUsage200ResponseData as GetBillingUsage200ResponseData
+from sipher_client.models.get_billing_usage200_response_data_categories_value import GetBillingUsage200ResponseDataCategoriesValue as GetBillingUsage200ResponseDataCategoriesValue
 from sipher_client.models.get_compliance_report200_response import GetComplianceReport200Response as GetComplianceReport200Response
 from sipher_client.models.get_compliance_report200_response_data import GetComplianceReport200ResponseData as GetComplianceReport200ResponseData
 from sipher_client.models.get_errors200_response import GetErrors200Response as GetErrors200Response
@@ -371,6 +403,8 @@ from sipher_client.models.get_health200_response_data_memory import GetHealth200
 from sipher_client.models.get_health200_response_data_solana import GetHealth200ResponseDataSolana as GetHealth200ResponseDataSolana
 from sipher_client.models.get_health503_response import GetHealth503Response as GetHealth503Response
 from sipher_client.models.get_health503_response_error import GetHealth503ResponseError as GetHealth503ResponseError
+from sipher_client.models.get_jito_bundle_status200_response import GetJitoBundleStatus200Response as GetJitoBundleStatus200Response
+from sipher_client.models.get_jito_bundle_status200_response_data import GetJitoBundleStatus200ResponseData as GetJitoBundleStatus200ResponseData
 from sipher_client.models.get_ready200_response import GetReady200Response as GetReady200Response
 from sipher_client.models.get_ready200_response_data import GetReady200ResponseData as GetReady200ResponseData
 from sipher_client.models.get_ready200_response_data_checks import GetReady200ResponseDataChecks as GetReady200ResponseDataChecks
@@ -382,6 +416,11 @@ from sipher_client.models.get_session200_response import GetSession200Response a
 from sipher_client.models.get_session200_response_data import GetSession200ResponseData as GetSession200ResponseData
 from sipher_client.models.get_tally200_response import GetTally200Response as GetTally200Response
 from sipher_client.models.get_tally200_response_data import GetTally200ResponseData as GetTally200ResponseData
+from sipher_client.models.handle_billing_webhook200_response import HandleBillingWebhook200Response as HandleBillingWebhook200Response
+from sipher_client.models.handle_billing_webhook200_response_data import HandleBillingWebhook200ResponseData as HandleBillingWebhook200ResponseData
+from sipher_client.models.handle_billing_webhook_request import HandleBillingWebhookRequest as HandleBillingWebhookRequest
+from sipher_client.models.list_billing_invoices200_response import ListBillingInvoices200Response as ListBillingInvoices200Response
+from sipher_client.models.list_billing_invoices200_response_data import ListBillingInvoices200ResponseData as ListBillingInvoices200ResponseData
 from sipher_client.models.near_transfer_data import NearTransferData as NearTransferData
 from sipher_client.models.near_transfer_data_actions_inner import NearTransferDataActionsInner as NearTransferDataActionsInner
 from sipher_client.models.privacy_score200_response import PrivacyScore200Response as PrivacyScore200Response
@@ -451,6 +490,9 @@ from sipher_client.models.submit_arcium_computation_request_viewing_key import S
 from sipher_client.models.submit_ballot200_response import SubmitBallot200Response as SubmitBallot200Response
 from sipher_client.models.submit_ballot200_response_data import SubmitBallot200ResponseData as SubmitBallot200ResponseData
 from sipher_client.models.submit_ballot_request import SubmitBallotRequest as SubmitBallotRequest
+from sipher_client.models.submit_jito_bundle200_response import SubmitJitoBundle200Response as SubmitJitoBundle200Response
+from sipher_client.models.submit_jito_bundle200_response_data import SubmitJitoBundle200ResponseData as SubmitJitoBundle200ResponseData
+from sipher_client.models.submit_jito_bundle_request import SubmitJitoBundleRequest as SubmitJitoBundleRequest
 from sipher_client.models.tally_votes200_response import TallyVotes200Response as TallyVotes200Response
 from sipher_client.models.tally_votes200_response_data import TallyVotes200ResponseData as TallyVotes200ResponseData
 from sipher_client.models.tally_votes_request import TallyVotesRequest as TallyVotesRequest

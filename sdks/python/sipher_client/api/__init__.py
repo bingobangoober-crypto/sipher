@@ -3,9 +3,11 @@
 # import apis into api package
 from sipher_client.api.arcium_api import ArciumApi
 from sipher_client.api.backends_api import BackendsApi
+from sipher_client.api.billing_usage_api import BillingUsageApi
 from sipher_client.api.cspl_api import CSPLApi
 from sipher_client.api.commitment_api import CommitmentApi
 from sipher_client.api.compliance_api import ComplianceApi
+from sipher_client.api.gas_abstraction_api import GasAbstractionApi
 from sipher_client.api.governance_api import GovernanceApi
 from sipher_client.api.health_api import HealthApi
 from sipher_client.api.inco_api import IncoApi

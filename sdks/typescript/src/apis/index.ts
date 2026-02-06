@@ -2,9 +2,11 @@
 /* eslint-disable */
 export * from './ArciumApi';
 export * from './BackendsApi';
+export * from './BillingUsageApi';
 export * from './CSPLApi';
 export * from './CommitmentApi';
 export * from './ComplianceApi';
+export * from './GasAbstractionApi';
 export * from './GovernanceApi';
 export * from './HealthApi';
 export * from './IncoApi';
