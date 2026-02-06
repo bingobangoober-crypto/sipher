@@ -33,15 +33,21 @@ jobs:
       - name: Bundle agent script
         run: pnpm dlx esbuild scripts/colosseum.ts --bundle --platform=node --format=esm --outfile=dist/colosseum.mjs
 
-      - name: Deploy and restart heartbeat
+      - name: Stop existing heartbeat
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: sip
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            pkill -f 'colosseum.mjs' || true
-            sleep 2
+            PID=$(pgrep -f 'node colosseum.mjs' || echo "")
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null || true
+              sleep 2
+              echo "Stopped heartbeat PID $PID"
+            else
+              echo "No heartbeat running"
+            fi
 
       - name: Upload bundle to VPS
         uses: appleboy/scp-action@v0.1.7
