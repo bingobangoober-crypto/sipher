@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 79 endpoints | 351 tests | 17 chains supported
+**Stats:** 82 endpoints | 371 tests | 17 chains supported
 
 ---
 
@@ -55,7 +55,7 @@
 - **Logging:** Pino v9 (structured JSON, audit logs)
 - **Docs:** swagger-ui-express (OpenAPI 3.1)
 - **Cache:** Redis 7 (rate limiting, idempotency) with in-memory fallback
-- **Testing:** Vitest + Supertest (316 tests)
+- **Testing:** Vitest + Supertest (371 tests)
 - **Deployment:** Docker + GHCR → VPS (port 5006)
 - **Domain:** sipher.sip-protocol.org
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (351 tests, 19 suites)
+pnpm test -- --run              # Run tests (371 tests, 20 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 
@@ -247,6 +247,7 @@ sipher/
 │   │   ├── range-proof.ts          # STARK range proofs (generate, verify)
 │   │   ├── backends.ts             # Privacy backend registry (list, health, select)
 │   │   ├── arcium.ts               # Arcium MPC (compute, status, decrypt)
+│   │   ├── inco.ts                 # Inco FHE (encrypt, compute, decrypt)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
 │   │   ├── solana.ts               # Connection manager + RPC latency measurement
@@ -256,7 +257,9 @@ sipher/
 │   │   ├── stark-provider.ts       # STARK range proof provider (M31 limbs, mock prover)
 │   │   ├── arcium-provider.ts      # Arcium MPC mock provider (state machine, LRU cache)
 │   │   ├── arcium-backend.ts       # Arcium PrivacyBackend implementation (compute type)
-│   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium)
+│   │   ├── inco-provider.ts       # Inco FHE mock provider (encryption, computation, noise budget)
+│   │   ├── inco-backend.ts        # Inco PrivacyBackend implementation (compute type)
+│   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium + Inco)
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
@@ -284,7 +287,8 @@ sipher/
 │   ├── private-transfer.test.ts   # 25 tests (Solana/EVM/NEAR, unsupported, validation, idempotency)
 │   ├── range-proof.test.ts        # 18 tests (generate, verify, edge cases, idempotency, M31 math)
 │   ├── backends.test.ts           # 17 tests (list, health, select, edge cases)
-│   └── arcium.test.ts             # 18 tests (compute, status, decrypt, idempotency, backend)
+│   ├── arcium.test.ts             # 18 tests (compute, status, decrypt, idempotency, backend)
+│   └── inco.test.ts               # 20 tests (encrypt, compute, decrypt, idempotency, backend, E2E)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -297,7 +301,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (35 endpoints)
+## API ENDPOINTS (38 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -339,6 +343,9 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | POST | `/v1/arcium/compute` | Submit MPC computation to Arcium cluster | Yes | ✓ |
 | GET | `/v1/arcium/compute/:id/status` | Poll computation status (state machine) | Yes | — |
 | POST | `/v1/arcium/decrypt` | Decrypt completed computation with viewing key | Yes | — |
+| POST | `/v1/inco/encrypt` | Encrypt value with FHE (FHEW/TFHE) | Yes | — |
+| POST | `/v1/inco/compute` | Compute on encrypted ciphertexts (homomorphic) | Yes | ✓ |
+| POST | `/v1/inco/decrypt` | Decrypt FHE computation result | Yes | — |
 
 ### Idempotency
 
@@ -384,6 +391,9 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 | **500** | ARCIUM_COMPUTATION_FAILED |
 | **404** | ARCIUM_COMPUTATION_NOT_FOUND |
 | **400** | ARCIUM_DECRYPT_FAILED |
+| **500** | INCO_ENCRYPTION_FAILED |
+| **404** | INCO_COMPUTATION_NOT_FOUND |
+| **400** | INCO_DECRYPT_FAILED |
 | **503** | SERVICE_UNAVAILABLE, SOLANA_RPC_UNAVAILABLE |
 
 ---
@@ -403,7 +413,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (316 tests must pass)
+- Run `pnpm test -- --run` after code changes (371 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -450,11 +460,11 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | 🔲 Planned |
 | 6 | Enterprise | 6 | 🔲 Planned |
 
-**Progress:** 29/38 issues complete | 351 tests | 79 endpoints | 17 chains
+**Progress:** 30/38 issues complete | 371 tests | 82 endpoints | 17 chains
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-06
-**Status:** Phase 5 In Progress | 79 Endpoints | 351 Tests | 17 Chains | Agent #274 Active
+**Status:** Phase 5 In Progress | 82 Endpoints | 371 Tests | 17 Chains | Agent #274 Active

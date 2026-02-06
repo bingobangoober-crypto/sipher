@@ -622,6 +622,67 @@ Returns: `decryptedOutput`, `verificationHash`, `circuitId`.
 
 ---
 
+### Inco FHE Compute (Beta)
+
+Encrypt values, compute on ciphertexts homomorphically, and decrypt results using Fully Homomorphic Encryption. FHE operations complete synchronously (no status polling needed). Tracks noise budget consumption per operation.
+
+#### Encrypt Value
+
+```
+POST /v1/inco/encrypt
+Content-Type: application/json
+
+{
+  "plaintext": 42,
+  "scheme": "tfhe",
+  "label": "my-value"
+}
+```
+
+**Parameters:**
+- `plaintext` — Value to encrypt (number or string)
+- `scheme` — FHE scheme: `fhew` (fast boolean ops) or `tfhe` (general-purpose)
+- `label` — Optional label
+
+Returns: `encryptionId` (inc_...), `ciphertext`, `scheme`, `noiseBudget` (100), `supportedSchemes`.
+
+#### Compute on Ciphertexts
+
+```
+POST /v1/inco/compute
+Content-Type: application/json
+
+{
+  "operation": "add",
+  "ciphertexts": ["0x...", "0x..."],
+  "scheme": "tfhe"
+}
+```
+
+**Parameters:**
+- `operation` — `add` (2 ops, noise: 5), `mul` (2 ops, noise: 15), `not` (1 op, noise: 3), `compare_eq` (2 ops, noise: 8), `compare_lt` (2 ops, noise: 8)
+- `ciphertexts` — Hex-encoded ciphertexts (1-3)
+- `scheme` — FHE scheme (default: `tfhe`)
+
+Returns: `computationId` (inc_...), `operation`, `resultCiphertext`, `noiseBudgetRemaining`, `status: "completed"`.
+
+Supports `Idempotency-Key` header.
+
+#### Decrypt Result
+
+```
+POST /v1/inco/decrypt
+Content-Type: application/json
+
+{
+  "computationId": "inc_..."
+}
+```
+
+Returns: `decryptedOutput`, `verificationHash`, `operation`.
+
+---
+
 ## Idempotency
 
 Mutation endpoints (`/transfer/shield`, `/transfer/claim`, `/transfer/private`, `/commitment/create`, `/viewing-key/disclose`) support the `Idempotency-Key` header. Send a UUID v4 value to safely retry requests — duplicate keys return the cached response with `Idempotency-Replayed: true` header.
