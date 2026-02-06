@@ -93,6 +93,9 @@ export enum ErrorCode {
   // 409 — Governance
   GOVERNANCE_DOUBLE_VOTE = 'GOVERNANCE_DOUBLE_VOTE',
 
+  // 422 — Governance
+  GOVERNANCE_BALLOT_LIMIT = 'GOVERNANCE_BALLOT_LIMIT',
+
   // 404 — Session
   SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
 
@@ -442,6 +445,14 @@ export const ERROR_CATALOG: ErrorCatalogEntry[] = [
     code: ErrorCode.GOVERNANCE_DOUBLE_VOTE,
     httpStatus: 409,
     description: 'Duplicate vote detected. The nullifier has already been used for this proposal.',
+    retryable: false,
+  },
+
+  // 422 — Governance
+  {
+    code: ErrorCode.GOVERNANCE_BALLOT_LIMIT,
+    httpStatus: 422,
+    description: 'Proposal has reached the maximum ballot capacity (10,000). No additional votes can be submitted.',
     retryable: false,
   },
 

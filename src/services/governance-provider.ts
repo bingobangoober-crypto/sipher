@@ -7,6 +7,7 @@ import type { HexString } from '@sip-protocol/types'
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const DOMAIN_TAG = new TextEncoder().encode('SIPHER-GOVERNANCE')
+const MAX_BALLOTS_PER_PROPOSAL = 10_000
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,6 +153,15 @@ export function submitBallot(params: SubmitBallotParams): {
   if (proposal.nullifiers.has(nullifier)) {
     const err = new Error(`Duplicate vote detected for proposal: ${proposalId}`)
     err.name = 'GovernanceDoubleVoteError'
+    throw err
+  }
+
+  // Cap ballots per proposal to prevent memory exhaustion
+  if (proposal.ballots.length >= MAX_BALLOTS_PER_PROPOSAL) {
+    const err = new Error(
+      `Proposal ${proposalId} has reached the maximum of ${MAX_BALLOTS_PER_PROPOSAL} ballots.`
+    )
+    err.name = 'GovernanceBallotLimitError'
     throw err
   }
 

@@ -53,6 +53,17 @@ export function errorHandler(
     return
   }
 
+  if (err.name === 'GovernanceBallotLimitError') {
+    res.status(422).json({
+      success: false,
+      error: {
+        code: ErrorCode.GOVERNANCE_BALLOT_LIMIT,
+        message: err.message,
+      },
+    })
+    return
+  }
+
   if (err.name === 'GovernanceProposalNotFoundError') {
     res.status(404).json({
       success: false,

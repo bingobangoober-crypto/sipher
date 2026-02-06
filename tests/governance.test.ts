@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
-import { resetGovernanceProvider } from '../src/services/governance-provider.js'
+import { resetGovernanceProvider, submitBallot, encryptBallot } from '../src/services/governance-provider.js'
 
 vi.mock('@solana/web3.js', async () => {
   const actual = await vi.importActual('@solana/web3.js')
@@ -223,6 +223,38 @@ describe('POST /v1/governance/ballot/submit', () => {
       .send(payload)
     expect(second.status).toBe(200)
     expect(second.headers['idempotency-replayed']).toBe('true')
+  })
+
+  it('rejects ballot when proposal reaches capacity (10,000) → 422', async () => {
+    // Fill proposal to capacity directly via service layer with dummy hex values
+    // (no crypto needed — limit check doesn't validate commitment correctness)
+    const proposalId = 'proposal-capacity'
+    const dummyCommitment = '0x' + 'aa'.repeat(32)
+    const dummyBlinding = '0x' + 'bb'.repeat(32)
+
+    for (let i = 0; i < 10_000; i++) {
+      const nullifier = '0x' + i.toString(16).padStart(64, '0')
+      submitBallot({
+        proposalId,
+        commitment: dummyCommitment,
+        blindingFactor: dummyBlinding,
+        nullifier,
+        vote: 'yes',
+      })
+    }
+
+    // The 10,001st ballot via API should be rejected
+    const res = await request(app)
+      .post('/v1/governance/ballot/submit')
+      .send({
+        proposalId,
+        commitment: dummyCommitment,
+        blindingFactor: dummyBlinding,
+        nullifier: '0x' + 'ff'.repeat(32),
+        vote: 'no',
+      })
+    expect(res.status).toBe(422)
+    expect(res.body.error.code).toBe('GOVERNANCE_BALLOT_LIMIT')
   })
 
   it('rejects missing commitment → 400', async () => {
