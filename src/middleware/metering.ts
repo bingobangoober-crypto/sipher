@@ -94,7 +94,13 @@ export function meteringMiddleware(req: Request, res: Response, next: NextFuncti
       next()
     })
     .catch((err) => {
-      logger.error({ err }, 'Quota check failed — allowing request')
-      next()
+      logger.error({ err }, 'Quota check failed — rejecting request (fail-closed)')
+      res.status(503).json({
+        success: false,
+        error: {
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          message: 'Usage quota service temporarily unavailable. Please retry.',
+        },
+      })
     })
 }
