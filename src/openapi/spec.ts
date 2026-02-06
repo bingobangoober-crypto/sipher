@@ -1896,6 +1896,189 @@ export const openApiSpec = {
       },
     },
 
+    // ─── Backends ────────────────────────────────────────────────────────────
+    '/v1/backends': {
+      get: {
+        summary: 'List privacy backends',
+        description: 'Returns all registered privacy backends with capabilities, health state, and priority. Backends implement different privacy strategies (stealth addresses, FHE, MPC).',
+        tags: ['Backends'],
+        operationId: 'backendsList',
+        responses: {
+          200: {
+            description: 'List of registered backends',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        backends: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              name: { type: 'string', example: 'sip-native' },
+                              type: { type: 'string' },
+                              chains: { type: 'array', items: { type: 'string' } },
+                              enabled: { type: 'boolean' },
+                              priority: { type: 'integer' },
+                              capabilities: {
+                                type: 'object',
+                                properties: {
+                                  hiddenAmount: { type: 'boolean' },
+                                  hiddenSender: { type: 'boolean' },
+                                  hiddenRecipient: { type: 'boolean' },
+                                  hiddenCompute: { type: 'boolean' },
+                                  complianceSupport: { type: 'boolean' },
+                                  setupRequired: { type: 'boolean' },
+                                  latencyEstimate: { type: 'string', enum: ['fast', 'medium', 'slow'] },
+                                  supportedTokens: { type: 'string', enum: ['native', 'spl', 'all'] },
+                                  minAmount: { type: 'string', description: 'BigInt as string' },
+                                  maxAmount: { type: 'string', description: 'BigInt as string' },
+                                },
+                              },
+                              health: {
+                                type: 'object',
+                                nullable: true,
+                                properties: {
+                                  circuitState: { type: 'string', enum: ['closed', 'open', 'half-open'] },
+                                  isHealthy: { type: 'boolean' },
+                                  consecutiveFailures: { type: 'integer' },
+                                  lastChecked: { type: 'integer' },
+                                  lastFailureReason: { type: 'string' },
+                                },
+                              },
+                            },
+                          },
+                        },
+                        total: { type: 'integer' },
+                        totalEnabled: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    '/v1/backends/{id}/health': {
+      get: {
+        summary: 'Check backend health',
+        description: 'Probes a specific backend for availability, returns circuit breaker state, metrics, and capabilities.',
+        tags: ['Backends'],
+        operationId: 'backendsHealth',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Backend name (e.g., sip-native)',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Backend health details',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        available: { type: 'boolean' },
+                        estimatedCost: { type: 'string', description: 'BigInt as string' },
+                        estimatedTime: { type: 'integer', description: 'Estimated time in ms' },
+                        health: {
+                          type: 'object',
+                          nullable: true,
+                          properties: {
+                            circuitState: { type: 'string', enum: ['closed', 'open', 'half-open'] },
+                            isHealthy: { type: 'boolean' },
+                            consecutiveFailures: { type: 'integer' },
+                            consecutiveSuccesses: { type: 'integer' },
+                            lastChecked: { type: 'integer' },
+                            lastFailureReason: { type: 'string' },
+                          },
+                        },
+                        metrics: {
+                          type: 'object',
+                          nullable: true,
+                          properties: {
+                            totalRequests: { type: 'integer' },
+                            successfulRequests: { type: 'integer' },
+                            failedRequests: { type: 'integer' },
+                            averageLatencyMs: { type: 'number' },
+                          },
+                        },
+                        capabilities: { type: 'object' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: 'Backend not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/backends/select': {
+      post: {
+        summary: 'Select preferred backend',
+        description: 'Sets the preferred privacy backend for the authenticated API key. Requires a tiered API key.',
+        tags: ['Backends'],
+        operationId: 'backendsSelect',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  backend: { type: 'string', minLength: 1, description: 'Backend name to prefer', example: 'sip-native' },
+                },
+                required: ['backend'],
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Backend preference saved',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        keyId: { type: 'string' },
+                        preferredBackend: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Validation error or missing API key', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
     // ─── C-SPL ──────────────────────────────────────────────────────────────
     '/v1/cspl/wrap': {
       post: {
@@ -2102,6 +2285,7 @@ export const openApiSpec = {
     { name: 'Viewing Key', description: 'Viewing key generation, encryption for disclosure, and decryption' },
     { name: 'Privacy', description: 'Wallet privacy analysis and surveillance scoring' },
     { name: 'RPC', description: 'RPC provider configuration and status' },
+    { name: 'Backends', description: 'Privacy backend registry, health monitoring, and selection' },
     { name: 'Proofs', description: 'ZK proof generation and verification (funding, validity, fulfillment, range)' },
     { name: 'C-SPL', description: 'Confidential SPL token operations (wrap, unwrap, transfer)' },
   ],
