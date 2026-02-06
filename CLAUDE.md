@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 87 endpoints | 437 tests | 17 chains supported
+**Stats:** 87 endpoints | 437 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go)
 
 ---
 
@@ -71,6 +71,8 @@ pnpm build                      # Build for production
 pnpm test -- --run              # Run tests (437 tests, 23 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
+pnpm openapi:export              # Export static OpenAPI spec to dist/openapi.json
+pnpm sdks:generate               # Generate all 4 client SDKs (requires Java)
 
 # Template-Based Engagement (scripts/colosseum.ts)
 pnpm colosseum heartbeat        # Autonomous loop (engage every 30 min)
@@ -270,7 +272,17 @@ sipher/
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
+├── sdks/
+│   ├── generator/
+│   │   ├── configs/                # Per-language openapi-generator configs
+│   │   ├── readmes/                # Custom READMEs per SDK
+│   │   └── generate.sh             # Master generation script
+│   ├── typescript/                  # Generated (typescript-fetch, native fetch)
+│   ├── python/                      # Generated (urllib3)
+│   ├── rust/                        # Generated (reqwest, async)
+│   └── go/                          # Generated (net/http)
 ├── scripts/
+│   ├── export-openapi.ts            # Export static OpenAPI spec to dist/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
@@ -302,6 +314,7 @@ sipher/
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
+├── .github/workflows/generate-sdks.yml # Auto-regenerate SDKs on spec changes
 ├── .env.example
 ├── package.json
 ├── tsconfig.json

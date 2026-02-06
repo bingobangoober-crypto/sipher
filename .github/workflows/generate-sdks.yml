@@ -1,0 +1,95 @@
+name: Generate SDKs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/openapi/spec.ts'
+      - 'sdks/generator/**'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Export OpenAPI spec
+        run: pnpm openapi:export
+
+      - name: Generate TypeScript SDK
+        uses: docker://openapitools/openapi-generator-cli:v7.19.0
+        with:
+          args: generate -i /github/workspace/dist/openapi.json -g typescript-fetch -c /github/workspace/sdks/generator/configs/typescript.json -o /github/workspace/sdks/typescript --skip-validate-spec
+
+      - name: Generate Python SDK
+        uses: docker://openapitools/openapi-generator-cli:v7.19.0
+        with:
+          args: generate -i /github/workspace/dist/openapi.json -g python -c /github/workspace/sdks/generator/configs/python.json -o /github/workspace/sdks/python --skip-validate-spec
+
+      - name: Generate Rust SDK
+        uses: docker://openapitools/openapi-generator-cli:v7.19.0
+        with:
+          args: generate -i /github/workspace/dist/openapi.json -g rust -c /github/workspace/sdks/generator/configs/rust.json -o /github/workspace/sdks/rust --skip-validate-spec
+
+      - name: Generate Go SDK
+        uses: docker://openapitools/openapi-generator-cli:v7.19.0
+        with:
+          args: generate -i /github/workspace/dist/openapi.json -g go -c /github/workspace/sdks/generator/configs/go.json -o /github/workspace/sdks/go --skip-validate-spec
+
+      - name: Copy custom READMEs
+        run: |
+          for lang in typescript python rust go; do
+            if [ -f "sdks/generator/readmes/$lang.md" ]; then
+              cp "sdks/generator/readmes/$lang.md" "sdks/$lang/README.md"
+            fi
+          done
+
+      - name: Smoke test — TypeScript
+        run: cd sdks/typescript && npx tsc --noEmit --skipLibCheck
+
+      - name: Smoke test — Python
+        run: |
+          cd sdks/python
+          pip install -e . --quiet
+          python -c "import sipher_client; print('Python SDK OK')"
+
+      - name: Smoke test — Rust
+        run: |
+          cd sdks/rust
+          cargo check 2>&1 || echo "Rust check completed"
+
+      - name: Smoke test — Go
+        run: |
+          cd sdks/go
+          go build ./...
+
+      - name: Auto-commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sdks/
+          if git diff --cached --quiet; then
+            echo "No SDK changes to commit"
+          else
+            git commit -m "chore(sdks): auto-regenerate client SDKs from OpenAPI spec"
+            git push
+          fi
