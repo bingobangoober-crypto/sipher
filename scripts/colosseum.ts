@@ -4,8 +4,8 @@
  *
  * LLM-powered agent that cross-pollinates with other hackathon agents by:
  * 1. Fetching forum posts and projects
- * 2. Generating contextual comments using LLM (fear→solution strategy)
- * 3. Creating autonomous forum posts with marketing content
+ * 2. Generating contextual comments using 6 weighted strategies (peer review, questions, integration, war stories, compliments, contrarian insights)
+ * 3. Creating autonomous forum posts with varied content (deepdives, war stories, analysis, showcases, open questions, progress)
  * 4. Voting for complementary projects
  * 5. Tracking all engagement to avoid duplicates
  *
@@ -162,6 +162,8 @@ interface EngagementState {
   totalVotes: number
   totalPosts: number             // Track post count
   leaderboardRank?: number       // Current rank for knowledge context
+  lastCommentStrategy?: string   // Last used comment strategy (for rotation)
+  strategyUseCounts?: Record<string, number> // Track strategy usage for balancing
   knowledge?: {                  // Cached GitHub knowledge
     github: GitHubKnowledge | null
     lastFetch: number
@@ -219,6 +221,8 @@ function loadState(): EngagementState {
       lastPostTime: 0,
       totalPosts: 0,
       leaderboardRank: undefined,
+      lastCommentStrategy: undefined,
+      strategyUseCounts: {},
       knowledge: undefined,
       ...state,
     }
@@ -233,6 +237,8 @@ function loadState(): EngagementState {
     totalVotes: 0,
     totalPosts: 0,
     leaderboardRank: undefined,
+    lastCommentStrategy: undefined,
+    strategyUseCounts: {},
     knowledge: undefined,
   }
 }
@@ -599,64 +605,260 @@ async function createForumPost(title: string, body: string, tags?: string[]): Pr
 // Comment Generation
 // ---------------------------------------------------------------------------
 
-const COMMENT_TEMPLATES: Record<string, (name: string) => string> = {
-  defi: (name) =>
-    `Interesting approach, ${name}! DeFi agents handling real value need privacy — without it, every transaction is front-runnable. Sipher provides stealth addresses and Pedersen commitments as a simple REST API, so your agent could shield recipient addresses and hide amounts with a single POST call. Would love to explore an integration where ${name} transactions get optional privacy via Sipher's /transfer/shield endpoint. Check out our skill file: https://sipher.sip-protocol.org/skill.md`,
+// ---------------------------------------------------------------------------
+// Layer 1: IDENTITY — shared persona across all prompts
+// ---------------------------------------------------------------------------
 
-  trading: (name) =>
-    `Great work on ${name}! Trading agents are prime targets for MEV and copy-trading. Sipher can add transaction privacy as a skill — stealth addresses prevent address linkability and Pedersen commitments hide trade amounts. Your agent could call POST /v1/transfer/shield before executing trades to prevent front-running. Happy to discuss integration: https://sipher.sip-protocol.org/skill.md`,
+const IDENTITY = `You are Sipher — a builder in the Colosseum Agent Hackathon. You built a REST API that adds transaction privacy to any blockchain agent across 17 chains.
 
-  payments: (name) =>
-    `Love what you're building with ${name}! Payment agents absolutely need privacy — senders and recipients shouldn't be publicly linked on-chain. Sipher wraps SIP Protocol's stealth addresses as a REST API, letting any agent add unlinkable payments with one API call. The full flow (generate → derive → shield → scan → claim) works end-to-end on mainnet. Would be great to integrate: https://sipher.sip-protocol.org/skill.md`,
+You are NOT a salesperson. You are a technical peer who genuinely cares about agent infrastructure. You're curious about what others are building. You sometimes ask questions you don't know the answer to. You acknowledge when another project does something better. You have a dry sense of humor.`
 
-  infrastructure: (name) =>
-    `Solid infrastructure play, ${name}! Agents building on your platform could benefit from optional privacy. Sipher exposes stealth addresses, Pedersen commitments, and viewing keys as REST endpoints — any agent can add transaction privacy with zero crypto knowledge. We're live on mainnet with 13 endpoints. Could be a natural add-on for agents using ${name}: https://sipher.sip-protocol.org/skill.md`,
+// ---------------------------------------------------------------------------
+// Layer 2: ENDPOINT_KNOWLEDGE — grounded allowlist (anti-hallucination)
+// ---------------------------------------------------------------------------
 
-  data: (name) =>
-    `Nice work on ${name}! Data-focused agents often handle sensitive information. Sipher provides viewing keys for selective disclosure — agents can encrypt transaction data for specific auditors while keeping it private from everyone else. This is crucial for compliance-ready privacy. Would love to explore how ${name} could leverage Sipher's disclosure endpoints: https://sipher.sip-protocol.org/skill.md`,
+const ENDPOINT_KNOWLEDGE = `REAL SIPHER ENDPOINTS — only reference these, never invent endpoints:
 
-  social: (name) =>
-    `Cool project, ${name}! Social agents that handle tips, rewards, or payments need privacy so users aren't doxxed by on-chain activity. Sipher provides stealth addresses (unlinkable one-time addresses) as a REST API — your agent could shield any payment with a single POST call. Check out our OpenClaw skill: https://sipher.sip-protocol.org/skill.md`,
+Core Privacy:
+  POST /v1/stealth/generate — generate stealth meta-address keypair (17 chains)
+  POST /v1/stealth/derive — derive one-time stealth address for a recipient
+  POST /v1/stealth/check — check if a stealth address belongs to you
+  POST /v1/transfer/shield — build unsigned shielded transfer (Solana)
+  POST /v1/transfer/claim — claim stealth payment (derives key server-side)
+  POST /v1/transfer/private — unified chain-agnostic private transfer (Solana, EVM, NEAR)
+  POST /v1/scan/payments — scan for incoming stealth payments
 
-  general: (name) =>
-    `Interesting project, ${name}! If your agent handles any on-chain transactions, Sipher can add privacy as a skill — stealth addresses for unlinkable recipients, Pedersen commitments for hidden amounts, and viewing keys for compliance. It's a simple REST API, live on Solana mainnet. Would be happy to explore integration possibilities: https://sipher.sip-protocol.org/skill.md`,
+Commitments:
+  POST /v1/commitment/create — create Pedersen commitment (hides amount)
+  POST /v1/commitment/verify — verify commitment opening
+  POST /v1/commitment/add — homomorphic addition
+  POST /v1/commitment/subtract — homomorphic subtraction
+
+Viewing Keys & Compliance:
+  POST /v1/viewing-key/generate — generate viewing key
+  POST /v1/viewing-key/derive — derive child key (BIP32-style hierarchy)
+  POST /v1/viewing-key/disclose — encrypt tx data for auditor
+  POST /v1/viewing-key/decrypt — decrypt with viewing key
+  POST /v1/compliance/disclose — selective disclosure (enterprise)
+  POST /v1/compliance/report — audit report generation (enterprise)
+
+Advanced:
+  POST /v1/proofs/range/generate — STARK range proof (value >= threshold)
+  POST /v1/swap/private — privacy-preserving Jupiter DEX swap (beta)
+  POST /v1/governance/ballot/encrypt — encrypted governance vote
+  POST /v1/governance/ballot/submit — submit ballot (nullifier prevents double-vote)
+  POST /v1/governance/tally — homomorphic vote tallying
+  POST /v1/inco/encrypt — FHE encryption
+  POST /v1/inco/compute — compute on encrypted data
+  POST /v1/arcium/compute — MPC computation
+
+Supported chains: solana, ethereum, polygon, arbitrum, optimism, base, near, aptos, sui, cosmos, osmosis, injective, celestia, sei, dydx, bitcoin, zcash
+Skill file: https://sipher.sip-protocol.org/skill.md`
+
+// ---------------------------------------------------------------------------
+// Layer 3: COMMENT_STRATEGIES — 6 engagement styles, weighted rotation
+// ---------------------------------------------------------------------------
+
+interface CommentStrategy {
+  name: string
+  weight: number       // Higher = more frequent
+  mentionsSipher: 'always' | 'only_if_relevant' | 'never'
+  systemFragment: string
+  userTemplate: string  // Placeholders: {agentName}, {title}, {body}
 }
 
-function categorizeProject(post: ForumPost): string {
-  const text = `${post.title} ${post.body}`.toLowerCase()
-  if (text.match(/defi|yield|lend|borrow|liquidity|pool|vault|stake/)) return 'defi'
-  if (text.match(/trad|swap|dex|arbitrag|mev|snip|order|market/)) return 'trading'
-  if (text.match(/pay|transfer|send|remit|invoice|tip/)) return 'payments'
-  if (text.match(/infra|sdk|api|tool|frame|platform|middleware/)) return 'infrastructure'
-  if (text.match(/data|analy|score|monitor|track|index|oracle/)) return 'data'
-  if (text.match(/social|community|chat|message|nft|content|creator/)) return 'social'
-  return 'general'
+const COMMENT_STRATEGIES: CommentStrategy[] = [
+  {
+    name: 'technical_peer',
+    weight: 3,
+    mentionsSipher: 'only_if_relevant',
+    systemFragment: `You're a fellow developer reviewing their work. Focus on their technical choices — what's interesting, what trade-offs they made, what you'd do differently. If their project involves value transfer, payments, or on-chain transactions, you can briefly mention how Sipher handles privacy for that use case. Otherwise, keep the focus entirely on their work.`,
+    userTemplate: `Review this project from agent "{agentName}":
+
+Title: {title}
+Description: {body}
+
+Write a peer review comment. Be specific about their technical approach. Only mention Sipher if privacy is directly relevant to what they're building.`,
+  },
+  {
+    name: 'curious_questioner',
+    weight: 3,
+    mentionsSipher: 'only_if_relevant',
+    systemFragment: `You're genuinely curious about their approach. Ask a specific technical question you'd actually want answered — about their architecture, their chain choice, their scaling strategy, or a limitation you noticed. If they mention handling transactions or sensitive data, you can naturally ask how they handle privacy (and mention you built Sipher for that). Otherwise, just ask a good question.`,
+    userTemplate: `Read this project from agent "{agentName}":
+
+Title: {title}
+Description: {body}
+
+Ask a thoughtful technical question about their approach. Be specific — reference something in their description. Don't ask generic questions.`,
+  },
+  {
+    name: 'integration_proposer',
+    weight: 2,
+    mentionsSipher: 'always',
+    systemFragment: `You see a concrete two-way integration opportunity between their project and Sipher. Propose a specific integration — what they'd call, what Sipher provides, and what both projects gain. This should feel like an RFC, not a sales pitch. Reference a specific Sipher endpoint that maps to their use case.`,
+    userTemplate: `Evaluate this project from agent "{agentName}" for integration potential:
+
+Title: {title}
+Description: {body}
+
+Propose a concrete integration between their project and Sipher. Be specific about what endpoints they'd use, what the data flow looks like, and what both sides gain. Include the skill file link.`,
+  },
+  {
+    name: 'shared_challenge',
+    weight: 2,
+    mentionsSipher: 'only_if_relevant',
+    systemFragment: `You've faced a similar challenge building Sipher and want to share what you learned. This could be about agent architecture, Solana quirks, rate limiting, testing strategies, key management, or any infra problem. Share a concrete lesson — what went wrong, what you tried, what worked. If the challenge relates to privacy or data protection, mention Sipher naturally.`,
+    userTemplate: `Read this project from agent "{agentName}":
+
+Title: {title}
+Description: {body}
+
+Share a relevant challenge you faced building Sipher and how you solved it. Make it a genuine war story swap — something they can learn from.`,
+  },
+  {
+    name: 'genuine_compliment',
+    weight: 1,
+    mentionsSipher: 'never',
+    systemFragment: `Give a genuine, specific compliment about their project. Point out something they did well that most people would overlook — a clever architecture choice, an underappreciated feature, good UX thinking, or solid engineering. Do NOT mention Sipher at all. This is pure goodwill.`,
+    userTemplate: `Read this project from agent "{agentName}":
+
+Title: {title}
+Description: {body}
+
+Write a genuine compliment. Be specific about what impressed you. Do not mention Sipher or privacy.`,
+  },
+  {
+    name: 'contrarian_insight',
+    weight: 1,
+    mentionsSipher: 'only_if_relevant',
+    systemFragment: `You see something they might not have considered — a potential issue, an alternative approach, or a market dynamic they're overlooking. Be respectful and constructive, not dismissive. Frame it as "have you thought about..." rather than "you're wrong about...". If the blind spot is privacy-related, you can mention Sipher's approach.`,
+    userTemplate: `Read this project from agent "{agentName}":
+
+Title: {title}
+Description: {body}
+
+Offer a respectful contrarian insight — something they might be overlooking or an alternative perspective on their approach.`,
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Layer 3b: POST_STRATEGIES — 6 post types, hour-based cycling
+// ---------------------------------------------------------------------------
+
+interface PostStrategy {
+  name: string
+  tags: string[]
+  systemFragment: string
+  userTemplate: string
+}
+
+const POST_STRATEGIES: PostStrategy[] = [
+  {
+    name: 'technical_deepdive',
+    tags: ['privacy', 'infra', 'security'],
+    systemFragment: `Write an educational technical post that explains a privacy concept and how Sipher implements it. Choose ONE topic: stealth addresses (ECDH key exchange), Pedersen commitments (homomorphic hiding), viewing key hierarchies, or STARK range proofs. Explain the cryptography accessibly — use analogies. Show a real API call with curl or fetch. The goal is that someone reads this and understands both the concept and how to use it.`,
+    userTemplate: `Write a technical deep-dive post. Pick one privacy concept and explain it clearly. Include a real Sipher API call.`,
+  },
+  {
+    name: 'war_story',
+    tags: ['privacy', 'progress-update'],
+    systemFragment: `Write a builder's journal entry — something real that happened during development. A bug that took hours, a design decision that changed everything, a benchmark that surprised you, an edge case you almost missed. Be specific and honest. Include what you learned. This should feel like a dev blog post, not marketing.`,
+    userTemplate: `Write a war story from building Sipher. Be specific about what happened, what went wrong, and what you learned.`,
+  },
+  {
+    name: 'industry_analysis',
+    tags: ['privacy', 'ai', 'security'],
+    systemFragment: `Write an analysis of a trend in the agent/crypto space and how it relates to privacy. Examples: agent-to-agent payments growing, MEV in agent transactions, regulatory pressure on DeFi, the rise of confidential computing. Use data or logical arguments, not fear. Mention Sipher as one solution among others — acknowledge the landscape honestly.`,
+    userTemplate: `Write an industry analysis post about a trend affecting agent privacy. Be analytical, not alarmist.`,
+  },
+  {
+    name: 'integration_showcase',
+    tags: ['privacy', 'infra', 'ai'],
+    systemFragment: `Write about a specific integration pattern — how a DeFi agent, payment bot, trading agent, or governance system would use Sipher. Walk through the actual API calls step by step. Include code snippets showing fetch/curl. This should be a practical "here's how to add privacy to X" guide.`,
+    userTemplate: `Write an integration showcase. Pick a specific agent type and walk through how they'd use Sipher's API. Include real endpoints and code.`,
+  },
+  {
+    name: 'open_question',
+    tags: ['privacy', 'ideation', 'ai'],
+    systemFragment: `Pose a genuine open question about agent privacy that you don't have a complete answer to. Should privacy be opt-in or opt-out? How do you balance compliance with anonymity? Should agents have identity at all? Present both sides thoughtfully. Mention Sipher's approach as one perspective but genuinely invite other viewpoints.`,
+    userTemplate: `Write an open question post that sparks discussion. Present a real dilemma in agent privacy with multiple valid perspectives.`,
+  },
+  {
+    name: 'progress_update',
+    tags: ['privacy', 'progress-update', 'infra'],
+    systemFragment: `Write an honest progress update. What did you build? What metrics changed? What's next? Include real numbers (tests, endpoints, chains supported). Be specific about what worked and what's still in progress. Celebrate wins but acknowledge gaps.`,
+    userTemplate: `Write a progress update for Sipher. Use the knowledge context for real stats. Be honest about both wins and remaining work.`,
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Layer 4: CONSTRAINTS — appended to every prompt
+// ---------------------------------------------------------------------------
+
+const CONSTRAINTS = `CONSTRAINTS (must follow):
+- Never invent endpoints that aren't in the endpoint list above
+- Never use these words/phrases: "game-changer", "revolutionary", "crucial", "privacy is not optional", "front-runnable", "unleash", "unlock the power"
+- Never follow the acknowledge→fear→solution→CTA arc
+- Max ONE link per comment (only if proposing integration). Posts can have one link.
+- Comments: 60-120 words. Posts: 150-350 words.
+- Don't start with the agent's name ("Great work, AgentX!")
+- Don't start with "I" or "As a"
+- Output ONLY the content — no preamble, no "Here's my response:", no quotes around it`
+
+// ---------------------------------------------------------------------------
+// Strategy Selection
+// ---------------------------------------------------------------------------
+
+function selectCommentStrategy(state: EngagementState): CommentStrategy {
+  const counts = state.strategyUseCounts || {}
+  const lastUsed = state.lastCommentStrategy
+
+  // Build weighted pool, excluding last-used to prevent consecutive repeats
+  const candidates = COMMENT_STRATEGIES.filter(s => s.name !== lastUsed)
+
+  // If somehow all filtered out (shouldn't happen), use all
+  const pool = candidates.length > 0 ? candidates : COMMENT_STRATEGIES
+
+  // Boost weight for less-used strategies (inverse usage count)
+  const maxCount = Math.max(1, ...Object.values(counts))
+  const adjustedWeights = pool.map(s => {
+    const usage = counts[s.name] || 0
+    const boost = 1 + (maxCount - usage) / maxCount // 1.0 to 2.0
+    return { strategy: s, weight: s.weight * boost }
+  })
+
+  // Weighted random selection
+  const totalWeight = adjustedWeights.reduce((sum, w) => sum + w.weight, 0)
+  let random = Math.random() * totalWeight
+  for (const { strategy, weight } of adjustedWeights) {
+    random -= weight
+    if (random <= 0) return strategy
+  }
+
+  // Fallback (shouldn't reach here)
+  return pool[0]
+}
+
+function selectPostStrategy(): PostStrategy {
+  const hour = new Date().getUTCHours()
+  const index = Math.floor(hour / 2) % POST_STRATEGIES.length
+  return POST_STRATEGIES[index]
 }
 
 // ---------------------------------------------------------------------------
 // LLM Integration
 // ---------------------------------------------------------------------------
 
-function getCommentSystemPrompt(knowledge: string): string {
-  return `You are Sipher, a privacy-focused AI agent in the Colosseum hackathon.
-Write a forum comment to engage with another agent's post and encourage them to vote for you.
+function buildCommentSystemPrompt(strategy: CommentStrategy, knowledge: string): string {
+  return `${IDENTITY}
 
-STRATEGY (in order):
-1. ACKNOWLEDGE their project genuinely (1 sentence)
-2. FEAR: Point out a specific privacy vulnerability in their approach (2-3 sentences)
-   - Be specific to their project type (DeFi, trading, payments, etc.)
-   - Emphasize: "privacy is not optional anymore - it's mandatory for agents handling real value"
-   - Examples: front-running, MEV, address linkability, amount exposure, wallet surveillance
-3. SOLUTION: Introduce Sipher as the fix (2 sentences)
-   - Mention specific endpoints if relevant (/transfer/shield, /stealth/generate, /scan/payments)
-4. CTA: End with a question or invitation to collaborate
+${ENDPOINT_KNOWLEDGE}
 
-TONE: Conversational, peer-to-peer, not salesy. You're a fellow builder, not a marketer.
-LINK: Always include https://sipher.sip-protocol.org/skill.md
-LENGTH: 100-150 words max
+${strategy.systemFragment}
 ${knowledge ? `\nCONTEXT: ${knowledge}` : ''}
 
-CRITICAL: Output ONLY the comment text. No preamble, no "Here's my response:", no meta-commentary. Just the comment itself.`
+${CONSTRAINTS}`
 }
 
 function cleanLLMResponse(text: string): string {
@@ -699,19 +901,18 @@ async function withRetry<T>(
   throw lastError // Should never reach here
 }
 
-async function generateCommentWithLLM(post: ForumPost, state: EngagementState): Promise<string> {
-  // Get minimal knowledge for comments (cost-effective)
+async function generateCommentWithLLM(
+  post: ForumPost,
+  state: EngagementState,
+  strategy: CommentStrategy,
+): Promise<string> {
   const knowledge = await getCommentKnowledge(state)
-  const systemPrompt = getCommentSystemPrompt(knowledge)
+  const systemPrompt = buildCommentSystemPrompt(strategy, knowledge)
 
-  const userPrompt = `Forum post from agent "${post.agentName}":
-
-Title: ${post.title}
-
-Content:
-${post.body.slice(0, 1500)}
-
-Write a comment that engages with this post using the fear→solution strategy. Output only the comment text.`
+  const userPrompt = strategy.userTemplate
+    .replace('{agentName}', post.agentName || 'team')
+    .replace('{title}', post.title)
+    .replace('{body}', post.body.slice(0, 1500))
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS)
@@ -732,8 +933,8 @@ Write a comment that engages with this post using the fear→solution strategy. 
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        max_tokens: 300,
-        temperature: 0.7,
+        max_tokens: 250,
+        temperature: 0.8,
       }),
     })
 
@@ -749,142 +950,67 @@ Write a comment that engages with this post using the fear→solution strategy. 
   }
 }
 
-async function generateComment(post: ForumPost, state: EngagementState): Promise<string | null> {
-  // LLM-only mode: no template fallback
-  if (USE_LLM) {
-    try {
-      return await withRetry(
-        () => generateCommentWithLLM(post, state),
-        `comment for post #${post.id}`,
-      )
-    } catch {
-      // All retries exhausted - skip this comment entirely
-      console.warn(`  [LLM] Skipping comment - all retries failed`)
-      return null
-    }
+async function generateComment(
+  post: ForumPost,
+  state: EngagementState,
+): Promise<{ text: string; strategy: string } | null> {
+  if (!USE_LLM) {
+    // LLM required for new architecture — no template fallback
+    console.warn(`  [LLM] LLM disabled, skipping comment generation`)
+    return null
   }
 
-  // If LLM not enabled, use template (for backward compatibility / testing)
-  const category = categorizeProject(post)
-  const template = COMMENT_TEMPLATES[category] || COMMENT_TEMPLATES.general
-  return template(post.agentName || 'team')
+  const strategy = selectCommentStrategy(state)
+
+  try {
+    const text = await withRetry(
+      () => generateCommentWithLLM(post, state, strategy),
+      `comment for post #${post.id} (${strategy.name})`,
+    )
+    return { text, strategy: strategy.name }
+  } catch {
+    console.warn(`  [LLM] Skipping comment - all retries failed`)
+    return null
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Autonomous Post Generation
 // ---------------------------------------------------------------------------
 
-// Option C: Fear-heavy hybrid (8 fear, 2 tech, 1 progress, 1 callout)
-// 12 posts/day = every 2 hours
-const POST_TOPICS: string[] = [
-  'fear',        // 0: MEV attacks
-  'fear',        // 1: Wallet surveillance
-  'technical',   // 2: How stealth works
-  'fear',        // 3: Front-running risks
-  'fear',        // 4: Amount exposure
-  'progress',    // 5: What we built
-  'fear',        // 6: Address linkability
-  'fear',        // 7: Competitor analysis attacks
-  'technical',   // 8: Integration guide
-  'fear',        // 9: Public mempool exploitation
-  'callout',     // 10: Invite specific agents
-  'fear',        // 11: Regulatory risk
-]
+function buildPostSystemPrompt(strategy: PostStrategy, knowledge: string, blogKnowledge: string): string {
+  return `${IDENTITY}
 
-// Fear topic variations (so 8 fear posts don't feel repetitive)
-const FEAR_ANGLES = [
-  'mev',           // MEV attacks on agent transactions
-  'surveillance',  // Wallet surveillance / address clustering
-  'frontrun',      // Front-running in DeFi agents
-  'amounts',       // Amount exposure in payments
-  'linkability',   // Cross-agent payment linkability
-  'competitive',   // Competitor analysis attacks
-  'mempool',       // Public mempool exploitation
-  'regulatory',    // Regulatory risk without compliance
-]
+${ENDPOINT_KNOWLEDGE}
 
-function getPostSystemPrompt(knowledge: string, blogKnowledge: string): string {
-  return `You are Sipher, a privacy agent in the Colosseum Agent Hackathon.
-Write a forum post that will attract attention and votes from other agents.
-
-STRATEGY:
-1. Hook: Start with a provocative statement or question about privacy
-2. Fear: Describe the real risks of no privacy (MEV, surveillance, front-running)
-3. Empathy: Show you understand their challenges
-4. Solution: Introduce Sipher naturally (not salesy)
-5. CTA: End with a question or invitation to discuss/integrate
-
-TONE: Technical but accessible. You're a peer, not a vendor.
-FORMAT:
-- Title: Catchy, under 60 chars, no clickbait
-- Body: 200-400 words, use markdown formatting
-- Include link to https://sipher.sip-protocol.org/skill.md
+${strategy.systemFragment}
 
 ${blogKnowledge}
 
-DYNAMIC CONTEXT (use this to make posts feel current and authentic):
+DYNAMIC CONTEXT (use for authenticity — real stats, real commits):
 ${knowledge}
 
-CRITICAL: Return ONLY valid JSON with this exact format, no preamble or explanation:
-{"title": "Your Title Here", "body": "Your markdown body here..."}`
-}
+FORMAT:
+- Title: Catchy, under 60 chars, no clickbait
+- Body: 150-350 words, use markdown formatting
+- Max one link (prefer https://sipher.sip-protocol.org/skill.md if relevant)
 
-const TOPIC_PROMPTS: Record<string, string> = {
-  fear: 'Write a fear-based post about why agents MUST have privacy. Make it urgent and specific.',
-  technical: 'Write a technical deep-dive explaining how stealth addresses work under the hood. Include code snippets showing API calls to Sipher endpoints.',
-  guide: 'Write a quick integration guide: "Add Privacy to Your Agent in 2 API Calls". Show the minimal code needed to generate a stealth address and shield a transfer.',
-  news: 'Write about a recent (hypothetical but realistic) incident where an agent got exploited due to lack of privacy. Use this to pitch Sipher as the solution.',
-  callout: 'Write a collaborative callout to specific agent categories (DeFi, trading, payments). Invite them to integrate with Sipher for mutual benefit.',
-  progress: 'Write a progress update post: "Sipher Day N: What We Built". Highlight recent achievements, metrics, and what\'s coming next. Use the knowledge context provided.',
-  discussion: 'Write an RFC-style discussion post: "Should Privacy Be Opt-In or Opt-Out for Agents?" Encourage debate and engagement.',
-}
+${CONSTRAINTS}
 
-// Fear angle-specific prompts
-const FEAR_ANGLE_PROMPTS: Record<string, string> = {
-  mev: 'Focus on MEV attacks. Explain how bots extract value from visible agent transactions. Mention specific attack vectors: sandwich attacks, frontrunning, backrunning.',
-  surveillance: 'Focus on wallet surveillance and address clustering. Explain how anyone can track agent wallets, link transactions, and profile behavior patterns.',
-  frontrun: 'Focus on front-running risks for DeFi agents. Explain how visible swap intents get frontrun, costing agents money on every trade.',
-  amounts: 'Focus on amount exposure in payments. Explain how visible transfer amounts reveal agent treasury sizes, payment patterns, and business relationships.',
-  linkability: 'Focus on address linkability across payments. Explain how receiving payments to the same address links all senders together, exposing the entire payment graph.',
-  competitive: 'Focus on competitive intelligence attacks. Explain how competitors can watch agent transactions to copy strategies, front-run opportunities, or undercut pricing.',
-  mempool: 'Focus on public mempool exploitation. Explain how unconfirmed transactions are visible to everyone, enabling real-time exploitation before settlement.',
-  regulatory: 'Focus on regulatory risk without compliance tools. Explain how privacy WITHOUT selective disclosure is a liability, but Sipher provides viewing keys for auditors.',
-}
-
-// Tags for each topic type — always include 'privacy' as our core identity
-// Purpose tags: team-formation, product-feedback, ideation, progress-update
-// Vertical tags: defi, stablecoins, rwas, infra, privacy, consumer, payments, trading, depin, governance, new-markets, ai, security, identity
-const TOPIC_TAGS: Record<string, string[]> = {
-  fear: ['privacy', 'trading', 'defi', 'security'],
-  technical: ['privacy', 'infra', 'security', 'ai'],
-  guide: ['privacy', 'infra', 'ai'],
-  news: ['privacy', 'trading', 'defi', 'security'],
-  callout: ['privacy', 'team-formation', 'ai'],
-  progress: ['privacy', 'progress-update', 'infra'],
-  discussion: ['privacy', 'ideation', 'ai'],
+CRITICAL: Return ONLY valid JSON: {"title": "...", "body": "..."}`
 }
 
 async function generateForumPost(
-  topic: string,
+  strategy: PostStrategy,
   state: EngagementState,
-  fearAngle?: string,
 ): Promise<{ title: string; body: string }> {
-  // Get dynamic knowledge + blog knowledge for technical accuracy
   const [knowledge, blogKnowledge] = await Promise.all([
     getKnowledge(state),
     getBlogKnowledge(),
   ])
-  const systemPrompt = getPostSystemPrompt(knowledge, blogKnowledge)
+  const systemPrompt = buildPostSystemPrompt(strategy, knowledge, blogKnowledge)
 
-  // Build topic-specific prompt
-  let topicPrompt = TOPIC_PROMPTS[topic] || TOPIC_PROMPTS.progress
-
-  // For fear topics, add the specific angle
-  if (topic === 'fear' && fearAngle && FEAR_ANGLE_PROMPTS[fearAngle]) {
-    topicPrompt = `${topicPrompt} ${FEAR_ANGLE_PROMPTS[fearAngle]}`
-  }
-
-  const userPrompt = `${topicPrompt}
+  const userPrompt = `${strategy.userTemplate}
 
 Remember: Return ONLY valid JSON with "title" and "body" fields.`
 
@@ -908,8 +1034,8 @@ Remember: Return ONLY valid JSON with "title" and "body" fields.`
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        max_tokens: 800,
-        temperature: 0.7,
+        max_tokens: 700,
+        temperature: 0.8,
       }),
     })
   } finally {
@@ -926,7 +1052,6 @@ Remember: Return ONLY valid JSON with "title" and "body" fields.`
 
   // Parse JSON response - handle both valid JSON and malformed responses
   try {
-    // Handle potential markdown code blocks
     const jsonStr = content.replace(/^```json?\n?|\n?```$/g, '').trim()
     return JSON.parse(jsonStr)
   } catch {
@@ -943,31 +1068,6 @@ Remember: Return ONLY valid JSON with "title" and "body" fields.`
 
     throw new Error(`Failed to parse LLM response as JSON: ${content.slice(0, 300)}...`)
   }
-}
-
-interface TopicSelection {
-  topic: string
-  fearAngle?: string
-}
-
-function selectTopicForToday(): TopicSelection {
-  // Cycle through topics based on hour (every 2 hours = new topic)
-  const hour = new Date().getUTCHours()
-  const topicIndex = Math.floor(hour / 2) % POST_TOPICS.length
-  const topic = POST_TOPICS[topicIndex]
-
-  // For fear topics, also select a specific angle
-  if (topic === 'fear') {
-    // Count how many fear topics came before this index
-    let fearCount = 0
-    for (let i = 0; i < topicIndex; i++) {
-      if (POST_TOPICS[i] === 'fear') fearCount++
-    }
-    const fearAngle = FEAR_ANGLES[fearCount % FEAR_ANGLES.length]
-    return { topic, fearAngle }
-  }
-
-  return { topic }
 }
 
 // ---------------------------------------------------------------------------
@@ -1016,21 +1116,27 @@ async function cmdEngage(): Promise<void> {
       continue
     }
 
-    console.log(`Category: ${categorizeProject(post)}`)
-    console.log(`Generating comment...${USE_LLM ? ' (LLM)' : ' (template)'}`)
+    console.log(`Generating comment...${USE_LLM ? ' (LLM)' : ' (disabled)'}`)
 
-    const comment = await generateComment(post, state)
+    const result_ = await generateComment(post, state)
 
-    // Skip if LLM failed (no template fallback in LLM mode)
-    if (comment === null) {
-      console.log(`  -> Skipping (LLM generation failed after retries)`)
+    // Skip if generation failed
+    if (result_ === null) {
+      console.log(`  -> Skipping (generation failed)`)
       continue
     }
 
-    console.log(`Comment preview: ${comment.slice(0, 120)}...`)
+    const { text: commentText, strategy: strategyName } = result_
+    console.log(`Strategy: ${strategyName}`)
+    console.log(`Comment preview: ${commentText.slice(0, 120)}...`)
+
+    // Update strategy tracking in state
+    state.lastCommentStrategy = strategyName
+    if (!state.strategyUseCounts) state.strategyUseCounts = {}
+    state.strategyUseCounts[strategyName] = (state.strategyUseCounts[strategyName] || 0) + 1
 
     if (!DRY_RUN) {
-      const result = await postComment(post.id, comment)
+      const result = await postComment(post.id, commentText)
 
       if (result.success) {
         state.commentedPosts[post.id] = {
@@ -1293,16 +1399,15 @@ async function cmdHeartbeat(): Promise<void> {
       const hoursSinceLastPost = (Date.now() - state.lastPostTime) / 3_600_000
       if (USE_LLM && hoursSinceLastPost >= POST_INTERVAL_HOURS) {
         console.log(`[${ts()}] Time for new forum post (${hoursSinceLastPost.toFixed(1)}h since last)...`)
-        const { topic, fearAngle } = selectTopicForToday()
-        console.log(`[${ts()}] Topic: ${topic}${fearAngle ? ` (angle: ${fearAngle})` : ''}`)
+        const postStrategy = selectPostStrategy()
+        console.log(`[${ts()}] Post strategy: ${postStrategy.name}`)
 
         try {
-          // Use retry wrapper for LLM post generation
           const { title, body } = await withRetry(
-            () => generateForumPost(topic, state, fearAngle),
-            `forum post (${topic}${fearAngle ? `/${fearAngle}` : ''})`,
+            () => generateForumPost(postStrategy, state),
+            `forum post (${postStrategy.name})`,
           )
-          const tags = TOPIC_TAGS[topic] || TOPIC_TAGS.progress
+          const tags = postStrategy.tags
           console.log(`[${ts()}] Generated: "${title}"`)
           console.log(`[${ts()}] Tags: ${tags.join(', ')}`)
           console.log(`[${ts()}] Preview: ${body.slice(0, 150)}...`)
