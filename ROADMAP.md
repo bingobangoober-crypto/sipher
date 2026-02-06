@@ -66,7 +66,7 @@ Sipher becomes the **universal privacy middleware API** — the single REST endp
 
 ---
 
-## Phase 4: Multi-Chain Expansion (Apr-Jun 2026) 🎯 ACTIVE
+## Phase 4: Multi-Chain Expansion (Apr-Jun 2026) ✅
 
 > Extend beyond Solana. SDK already supports NEAR, Ethereum, Cosmos, Bitcoin, Move chains.
 
@@ -74,12 +74,12 @@ Sipher becomes the **universal privacy middleware API** — the single REST endp
 |----|-------|------|--------|
 | S4-01 | Add NEAR stealth address and viewing key endpoints | L | ✅ |
 | S4-02 | Add Ethereum/EVM stealth address endpoints (secp256k1) | M | ✅ |
-| S4-03 | Add chain-agnostic unified transfer endpoint (POST /transfer/private) | XL | 🔲 |
+| S4-03 | Add chain-agnostic unified transfer endpoint (POST /transfer/private) | XL | ✅ |
 | S4-04 | Add Cosmos stealth address endpoints (Osmosis, Injective, Celestia) | M | ✅ |
 | S4-05 | Add Bitcoin Taproot stealth address endpoints (Schnorr-based) | L | ✅ |
 | S4-06 | Add Move chain endpoints (Aptos, Sui) | M | ✅ |
 
-**Outcome:** 6 chain families supported through unified API. (5/6 complete — stealth endpoints done, unified transfer pending)
+**Outcome:** 6 chain families supported through unified API. (6/6 complete)
 
 ---
 
@@ -123,11 +123,11 @@ Sipher becomes the **universal privacy middleware API** — the single REST endp
 | 1 | Hackathon Polish | 7 | Feb 5-12 | ✅ Complete |
 | 2 | Production Hardening | 7 | Feb-Mar | ✅ Complete |
 | 3 | Advanced Privacy | 7 | Mar-Apr | ✅ Complete |
-| 4 | Multi-Chain | 6 | Apr-Jun | 🎯 Active (5/6) |
+| 4 | Multi-Chain | 6 | Apr-Jun | ✅ Complete |
 | 5 | Backend Aggregation | 5 | Jun-Aug | 🔲 Planned |
 | 6 | Enterprise | 6 | Aug-Dec | 🔲 Planned |
 
-**Progress: 26/38 issues complete** | **273 tests** | **70 endpoints** | **17 chains**
+**Progress: 27/38 issues complete** | **298 tests** | **71 endpoints** | **17 chains**
 
 ---
 
