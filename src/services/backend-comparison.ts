@@ -1,5 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import { getBackendRegistry } from './backend-registry.js'
+import { FIVE_MINUTES_MS } from '../constants.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export interface ComparisonResult {
 
 const comparisonCache = new LRUCache<string, ComparisonResult>({
   max: 100,
-  ttl: 5 * 60 * 1000, // 5 minutes
+  ttl: FIVE_MINUTES_MS,
 })
 
 function cacheKey(params: ComparisonParams): string {

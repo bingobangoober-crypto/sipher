@@ -2,6 +2,7 @@ import { keccak_256 } from '@noble/hashes/sha3'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 import { commit } from '@sip-protocol/sdk'
 import { LRUCache } from 'lru-cache'
+import { ONE_HOUR_MS } from '../constants.js'
 
 // ─── M31 Field Constants ────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ export function commitmentToStarkInput(commitmentHex: string): string {
 
 const verificationCache = new LRUCache<string, string>({
   max: 1000,
-  ttl: 60 * 60 * 1000, // 1 hour
+  ttl: ONE_HOUR_MS,
 })
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -81,9 +82,10 @@ export async function generateRangeProof(params: RangeProofParams): Promise<Rang
 
   // Validate range: value >= threshold
   if (value < threshold) {
-    const err = new Error(`Range proof failed: value (${value}) < threshold (${threshold})`)
-    err.name = 'ProofGenerationError'
-    ;(err as any).proofType = 'range'
+    const err = Object.assign(
+      new Error(`Range proof failed: value (${value}) < threshold (${threshold})`),
+      { name: 'ProofGenerationError', proofType: 'range' },
+    )
     throw err
   }
 

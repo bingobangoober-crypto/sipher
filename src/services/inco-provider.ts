@@ -1,6 +1,7 @@
 import { keccak_256 } from '@noble/hashes/sha3'
 import { bytesToHex } from '@noble/hashes/utils'
 import { LRUCache } from 'lru-cache'
+import { CACHE_MAX_DEFAULT, ONE_HOUR_MS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -82,13 +83,13 @@ export interface DecryptResult {
 // ─── Caches ─────────────────────────────────────────────────────────────────
 
 const encryptionCache = new LRUCache<string, EncryptionEntry>({
-  max: 5000,
-  ttl: 60 * 60 * 1000, // 1 hour
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_HOUR_MS,
 })
 
 const computationCache = new LRUCache<string, ComputationEntry>({
-  max: 5000,
-  ttl: 60 * 60 * 1000, // 1 hour
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_HOUR_MS,
 })
 
 // ─── Helper ─────────────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import {
   redisGet,
   redisSet,
 } from '../services/redis.js'
+import { CACHE_MAX_LARGE, ONE_DAY_MS, ONE_DAY_SECONDS } from '../constants.js'
 
 interface CachedResponse {
   status: number
@@ -15,13 +16,13 @@ interface CachedResponse {
 
 // In-memory fallback cache
 const memoryCache = new LRUCache<string, CachedResponse>({
-  max: 10_000,
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  max: CACHE_MAX_LARGE,
+  ttl: ONE_DAY_MS,
 })
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const REDIS_KEY_PREFIX = 'sipher:idempotency:'
-const REDIS_TTL_SECONDS = 24 * 60 * 60 // 24 hours
+const REDIS_TTL_SECONDS = ONE_DAY_SECONDS
 
 function getRedisKey(key: string): string {
   return `${REDIS_KEY_PREFIX}${key}`
@@ -89,7 +90,8 @@ export function idempotency(req: Request, res: Response, next: NextFunction) {
       // Intercept the response to cache it
       const originalJson = res.json.bind(res)
 
-      res.json = function (body: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- overriding Express res.json signature
+      ;(res as any).json = function (body: unknown) {
         const response: CachedResponse = {
           status: res.statusCode,
           body,
@@ -103,7 +105,7 @@ export function idempotency(req: Request, res: Response, next: NextFunction) {
         setCachedResponse(key, response).catch(() => {})
 
         return originalJson(body)
-      } as any
+      }
 
       next()
     })

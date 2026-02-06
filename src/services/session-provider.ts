@@ -7,14 +7,15 @@ import {
   redisSet,
   redisDel,
 } from './redis.js'
+import { CACHE_MAX_LARGE, ONE_HOUR_SECONDS, ONE_DAY_SECONDS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const DOMAIN_TAG = new TextEncoder().encode('SIPHER-SESSION')
 const REDIS_KEY_PREFIX = 'sipher:session:'
 const MIN_TTL_SECONDS = 60
-const DEFAULT_TTL_SECONDS = 3600        // 1 hour
-const MAX_TTL_SECONDS = 24 * 60 * 60    // 24 hours
+const DEFAULT_TTL_SECONDS = ONE_HOUR_SECONDS
+const MAX_TTL_SECONDS = ONE_DAY_SECONDS
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ export interface Session {
 // ─── Cache ──────────────────────────────────────────────────────────────────
 
 const sessionCache = new LRUCache<string, Session>({
-  max: 10_000,
+  max: CACHE_MAX_LARGE,
   ttl: MAX_TTL_SECONDS * 1000,
 })
 
@@ -166,7 +167,7 @@ export async function updateSession(
   // Shallow merge — only override provided keys
   for (const [key, value] of Object.entries(defaults)) {
     if (value !== undefined) {
-      ;(session.defaults as any)[key] = value
+      ;(session.defaults as Record<string, unknown>)[key] = value
     }
   }
 

@@ -1,6 +1,7 @@
 import { keccak_256 } from '@noble/hashes/sha3'
 import { bytesToHex } from '@noble/hashes/utils'
 import { LRUCache } from 'lru-cache'
+import { CACHE_MAX_DEFAULT, ONE_HOUR_MS, ONE_DAY_MS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -68,13 +69,13 @@ export interface ReportEntry {
 // ─── Caches ─────────────────────────────────────────────────────────────────
 
 const disclosureCache = new LRUCache<string, DisclosureResult>({
-  max: 5000,
-  ttl: 60 * 60 * 1000, // 1 hour
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_HOUR_MS,
 })
 
 const reportCache = new LRUCache<string, ReportEntry>({
   max: 1000,
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  ttl: ONE_DAY_MS,
 })
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ export function generateReport(params: ReportParams): ReportEntry {
     reportId,
     status: 'encrypted',
     generatedAt: now,
-    expiresAt: now + 24 * 60 * 60 * 1000, // 24h
+    expiresAt: now + ONE_DAY_MS,
     summary: {
       totalTransactions,
       totalVolume,

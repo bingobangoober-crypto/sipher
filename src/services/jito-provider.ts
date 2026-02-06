@@ -1,6 +1,7 @@
 import { keccak_256 } from '@noble/hashes/sha3'
 import { bytesToHex } from '@noble/hashes/utils'
 import { LRUCache } from 'lru-cache'
+import { CACHE_MAX_DEFAULT, TWO_HOURS_MS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -62,8 +63,8 @@ export interface BundleStatusResult {
 // ─── Cache ──────────────────────────────────────────────────────────────────
 
 const bundleCache = new LRUCache<string, BundleEntry>({
-  max: 5000,
-  ttl: 2 * 60 * 60 * 1000, // 2 hours
+  max: CACHE_MAX_DEFAULT,
+  ttl: TWO_HOURS_MS,
 })
 
 // ─── State Machine Thresholds (ms) ─────────────────────────────────────────

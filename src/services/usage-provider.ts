@@ -3,6 +3,7 @@ import { redisIncr, redisGet, redisExpire, isRedisConnected } from './redis.js'
 import type { ApiKeyTier, OperationCategory, DailyQuotas } from '../types/api-key.js'
 import { DAILY_QUOTAS } from '../types/api-key.js'
 import { logger } from '../logger.js'
+import { ONE_DAY_MS } from '../constants.js'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export interface DailyUsageResult {
 
 const usageCache = new LRUCache<string, number>({
   max: 50_000,
-  ttl: 24 * 60 * 60 * 1000, // 24h
+  ttl: ONE_DAY_MS,
 })
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

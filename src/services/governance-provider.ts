@@ -3,11 +3,12 @@ import { bytesToHex } from '@noble/hashes/utils'
 import { LRUCache } from 'lru-cache'
 import { commit, verifyOpening, addCommitments, addBlindings } from '@sip-protocol/sdk'
 import type { HexString } from '@sip-protocol/types'
+import { CACHE_MAX_DEFAULT, CACHE_MAX_LARGE, ONE_DAY_MS, SEVEN_DAYS_MS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const DOMAIN_TAG = new TextEncoder().encode('SIPHER-GOVERNANCE')
-const MAX_BALLOTS_PER_PROPOSAL = 10_000
+const MAX_BALLOTS_PER_PROPOSAL = CACHE_MAX_LARGE
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -66,13 +67,13 @@ export interface TallyParams {
 // ─── Caches ─────────────────────────────────────────────────────────────────
 
 const proposalCache = new LRUCache<string, ProposalEntry>({
-  max: 5000,
-  ttl: 7 * 24 * 60 * 60 * 1000, // 7 days
+  max: CACHE_MAX_DEFAULT,
+  ttl: SEVEN_DAYS_MS,
 })
 
 const tallyCache = new LRUCache<string, TallyEntry>({
-  max: 5000,
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_DAY_MS,
 })
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

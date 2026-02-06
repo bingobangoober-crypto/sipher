@@ -4,6 +4,7 @@ import { timingSafeEqual } from 'crypto'
 import { LRUCache } from 'lru-cache'
 import { env } from '../config.js'
 import type { ApiKeyTier } from '../types/api-key.js'
+import { CACHE_MAX_DEFAULT, ONE_DAY_MS } from '../constants.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -72,13 +73,13 @@ export interface WebhookEvent {
 // ─── Cache ──────────────────────────────────────────────────────────────────
 
 const subscriptionCache = new LRUCache<string, Subscription>({
-  max: 5000,
-  ttl: 24 * 60 * 60 * 1000, // 24h
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_DAY_MS,
 })
 
 const invoiceCache = new LRUCache<string, Invoice[]>({
-  max: 5000,
-  ttl: 24 * 60 * 60 * 1000,
+  max: CACHE_MAX_DEFAULT,
+  ttl: ONE_DAY_MS,
 })
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
