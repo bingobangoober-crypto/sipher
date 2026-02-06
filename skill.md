@@ -494,8 +494,21 @@ GET  /v1/admin/tiers      → List tier limits
 
 ---
 
+## Infrastructure
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| API | Express 5 + TypeScript | REST endpoints |
+| Cache | Redis 7 (optional) | Rate limiting, idempotency |
+| Privacy | @sip-protocol/sdk | Stealth, Pedersen, encryption |
+| Blockchain | Solana Mainnet | Program `S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at` |
+
+**Graceful Degradation:** All features work without Redis (falls back to in-memory). Redis enables distributed rate limiting across multiple instances.
+
+---
+
 ## Powered By
 
 - [SIP Protocol](https://sip-protocol.org) — The privacy standard for Web3
-- [@sip-protocol/sdk](https://www.npmjs.com/package/@sip-protocol/sdk) — Core cryptographic primitives
+- [@sip-protocol/sdk](https://www.npmjs.com/package/@sip-protocol/sdk) — Core cryptographic primitives (6,841+ tests)
 - Solana Mainnet — Program `S1PMFspo4W6BYKHWkHNF7kZ3fnqibEXg3LQjxepS9at`
