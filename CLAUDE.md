@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 97 endpoints | 508 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go)
+**Stats:** 103 endpoints | 539 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go)
 
 ---
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (508 tests, 33 suites)
+pnpm test -- --run              # Run tests (539 tests, 34 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 pnpm openapi:export              # Export static OpenAPI spec to dist/openapi.json
@@ -234,6 +234,7 @@ sipher/
 │   │   ├── request-id.ts           # X-Request-Id correlation
 │   │   ├── audit-log.ts            # Structured audit logging (sensitive field redaction)
 │   │   ├── idempotency.ts          # Idempotency-Key header (LRU cache)
+│   │   ├── metering.ts            # Daily quota metering (path → category, quota check)
 │   │   ├── require-tier.ts          # Enterprise tier gating middleware
 │   │   ├── session.ts              # X-Session-Id middleware (merge defaults into req.body)
 │   │   └── index.ts                # Barrel exports
@@ -257,6 +258,7 @@ sipher/
 │   │   ├── governance.ts           # Governance voting privacy (encrypt, submit, tally, getTally)
 │   │   ├── compliance.ts           # Compliance (disclose, report, report/:id)
 │   │   ├── jito.ts                 # Jito gas abstraction (relay, bundle/:id)
+│   │   ├── billing.ts              # Billing & usage (usage, subscription, invoices, portal, webhook)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
 │   │   ├── solana.ts               # Connection manager + RPC latency measurement
@@ -275,6 +277,8 @@ sipher/
 │   │   ├── governance-provider.ts # Governance voting (encrypted ballots, nullifiers, homomorphic tally)
 │   │   ├── compliance-provider.ts # Compliance provider (disclosure, reports, auditor verification)
 │   │   ├── jito-provider.ts       # Jito block engine mock (bundle relay, status, tip accounts)
+│   │   ├── stripe-provider.ts     # Mock Stripe provider (subscriptions, invoices, portal, webhooks)
+│   │   ├── usage-provider.ts      # Usage tracking & daily quotas (Redis + LRU fallback)
 │   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium + Inco)
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
@@ -293,7 +297,7 @@ sipher/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
-├── tests/                          # 508 tests across 33 suites
+├── tests/                          # 539 tests across 34 suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -320,7 +324,8 @@ sipher/
 │   ├── session.test.ts            # 28 tests (CRUD, middleware merge, tier gating, ownership)
 │   ├── governance.test.ts         # 23 tests (encrypt, submit, tally, double-vote, E2E flow)
 │   ├── compliance.test.ts         # 23 tests (disclose, report, get, tier gating, auditor verification)
-│   └── jito.test.ts               # 20 tests (relay, bundle status, tier gating, idempotency, state machine)
+│   ├── jito.test.ts               # 20 tests (relay, bundle status, tier gating, idempotency, state machine)
+│   └── billing.test.ts            # 31 tests (usage tracking, quotas, metering, subscriptions, invoices, webhooks)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -334,7 +339,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (53 endpoints)
+## API ENDPOINTS (59 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -394,6 +399,12 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | GET | `/v1/governance/tally/:id` | Get tally result | Yes | — |
 | POST | `/v1/jito/relay` | Submit transaction(s) via Jito bundle (beta) | Yes | ✓ |
 | GET | `/v1/jito/bundle/:id` | Poll Jito bundle status (beta) | Yes | — |
+| GET | `/v1/billing/usage` | Current period usage by category | Yes | — |
+| GET | `/v1/billing/subscription` | Current subscription details | Yes | — |
+| POST | `/v1/billing/subscribe` | Create/change subscription | Yes | — |
+| GET | `/v1/billing/invoices` | List invoices (paginated) | Yes | — |
+| POST | `/v1/billing/portal` | Generate Stripe customer portal URL (pro+) | Yes | — |
+| POST | `/v1/billing/webhook` | Stripe webhook receiver | No* | — |
 
 ### Idempotency
 
@@ -414,14 +425,15 @@ All requests are audit-logged with structured JSON (requestId, method, path, sta
 4. secureCors             → Dynamic CORS
 5. rateLimiter            → 100 req/min (memory-backed)
 6. authenticate           → X-API-Key / Bearer token (skip public paths)
-7. express.json()         → Parse JSON (1MB limit)
-8. compression()          → Gzip
-9. requestLogger          → pino-http request/response logging
-10. auditLog              → Structured audit log with redaction
-11. sessionMiddleware     → Merge X-Session-Id defaults into req.body
-12. [route handlers]      → API routes (some with idempotency middleware)
-13. notFoundHandler       → 404 catch-all
-14. errorHandler          → Global error handler (ErrorCode enum)
+7. meteringMiddleware     → Daily quota check + usage tracking per operation category
+8. express.json()         → Parse JSON (1MB limit)
+9. compression()          → Gzip
+10. requestLogger         → pino-http request/response logging
+11. auditLog              → Structured audit log with redaction
+12. sessionMiddleware     → Merge X-Session-Id defaults into req.body
+13. [route handlers]      → API routes (some with idempotency middleware)
+14. notFoundHandler       → 404 catch-all
+15. errorHandler          → Global error handler (ErrorCode enum)
 ```
 
 ---
@@ -457,6 +469,9 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 | **500** | JITO_RELAY_FAILED |
 | **404** | JITO_BUNDLE_NOT_FOUND |
 | **400** | JITO_INVALID_TRANSACTION |
+| **429** | DAILY_QUOTA_EXCEEDED |
+| **401** | BILLING_WEBHOOK_INVALID |
+| **500** | BILLING_SUBSCRIPTION_FAILED, BILLING_INVOICE_FAILED, BILLING_PORTAL_FAILED |
 | **503** | SERVICE_UNAVAILABLE, SOLANA_RPC_UNAVAILABLE |
 
 ---
@@ -476,7 +491,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (508 tests must pass)
+- Run `pnpm test -- --run` after code changes (539 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -520,14 +535,14 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 2 | Production Hardening | 7 | ✅ Complete |
 | 3 | Advanced Privacy | 7 | ✅ Complete |
 | 4 | Multi-Chain | 6 | ✅ Complete |
-| 5 | Backend Aggregation | 5 | 🔲 Planned |
-| 6 | Enterprise | 6 | 🔲 Planned |
+| 5 | Backend Aggregation | 5 | ✅ Complete |
+| 6 | Enterprise | 6 | ✅ Complete |
 
-**Progress:** 35/38 issues complete | 508 tests | 97 endpoints | 17 chains
+**Progress:** 38/38 issues complete | 539 tests | 103 endpoints | 17 chains | All phases complete
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-06
-**Status:** Phase 6 In Progress | 97 Endpoints | 508 Tests | 17 Chains | Agent #274 Active
+**Status:** Phase 6 Complete | 103 Endpoints | 539 Tests | 17 Chains | Agent #274 Active

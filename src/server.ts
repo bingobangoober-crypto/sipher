@@ -21,6 +21,7 @@ import {
   shutdownMiddleware,
   timeoutMiddleware,
   sessionMiddleware,
+  meteringMiddleware,
 } from './middleware/index.js'
 import router from './routes/index.js'
 import { openApiSpec } from './openapi/spec.js'
@@ -47,6 +48,7 @@ app.use(helmet())
 app.use(secureCors)
 app.use(rateLimiter)
 app.use(authenticate)
+app.use(meteringMiddleware)
 app.use(timeoutMiddleware)  // Per-endpoint timeouts (15-90s)
 app.use(express.json({ limit: '1mb' }))
 app.use(compression())
@@ -163,6 +165,14 @@ app.get('/', (_req, res) => {
         submitBallot: 'POST /v1/governance/ballot/submit',
         tally: 'POST /v1/governance/tally',
         getTally: 'GET /v1/governance/tally/:id',
+      },
+      billing: {
+        usage: 'GET /v1/billing/usage',
+        subscription: 'GET /v1/billing/subscription',
+        subscribe: 'POST /v1/billing/subscribe',
+        invoices: 'GET /v1/billing/invoices',
+        portal: 'POST /v1/billing/portal',
+        webhook: 'POST /v1/billing/webhook',
       },
       admin: {
         listKeys: 'GET /v1/admin/keys',

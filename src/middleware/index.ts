@@ -10,3 +10,4 @@ export { timeoutMiddleware, getAbortSignal, ENDPOINT_TIMEOUTS } from './timeout.
 export { betaEndpoint, getBetaWarning } from './beta.js'
 export { requireTier } from './require-tier.js'
 export { sessionMiddleware } from './session.js'
+export { meteringMiddleware } from './metering.js'

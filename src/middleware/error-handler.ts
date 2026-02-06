@@ -98,6 +98,40 @@ export function errorHandler(
     return
   }
 
+  // Handle Billing errors
+  if (err.name === 'DailyQuotaExceededError') {
+    res.status(429).json({
+      success: false,
+      error: {
+        code: ErrorCode.DAILY_QUOTA_EXCEEDED,
+        message: err.message,
+      },
+    })
+    return
+  }
+
+  if (err.name === 'BillingSubscriptionError') {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: ErrorCode.BILLING_SUBSCRIPTION_FAILED,
+        message: err.message,
+      },
+    })
+    return
+  }
+
+  if (err.name === 'BillingWebhookError') {
+    res.status(401).json({
+      success: false,
+      error: {
+        code: ErrorCode.BILLING_WEBHOOK_INVALID,
+        message: err.message,
+      },
+    })
+    return
+  }
+
   if (err.name === 'JitoInvalidTransactionError') {
     res.status(400).json({
       success: false,

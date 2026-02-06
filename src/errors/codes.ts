@@ -111,6 +111,17 @@ export enum ErrorCode {
   // 400 — Jito Gas Abstraction
   JITO_INVALID_TRANSACTION = 'JITO_INVALID_TRANSACTION',
 
+  // 429 — Billing / Quotas
+  DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED',
+
+  // 401 — Billing
+  BILLING_WEBHOOK_INVALID = 'BILLING_WEBHOOK_INVALID',
+
+  // 500 — Billing
+  BILLING_SUBSCRIPTION_FAILED = 'BILLING_SUBSCRIPTION_FAILED',
+  BILLING_INVOICE_FAILED = 'BILLING_INVOICE_FAILED',
+  BILLING_PORTAL_FAILED = 'BILLING_PORTAL_FAILED',
+
   // 503 — Service Unavailable
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
   SOLANA_RPC_UNAVAILABLE = 'SOLANA_RPC_UNAVAILABLE',
@@ -480,6 +491,42 @@ export const ERROR_CATALOG: ErrorCatalogEntry[] = [
     httpStatus: 400,
     description: 'Invalid transaction data. Transactions must be valid base64-encoded serialized Solana transactions.',
     retryable: false,
+  },
+
+  // 429 — Billing / Quotas
+  {
+    code: ErrorCode.DAILY_QUOTA_EXCEEDED,
+    httpStatus: 429,
+    description: 'Daily operation quota exceeded for your tier. Upgrade your plan or wait until midnight UTC.',
+    retryable: true,
+  },
+
+  // 401 — Billing
+  {
+    code: ErrorCode.BILLING_WEBHOOK_INVALID,
+    httpStatus: 401,
+    description: 'Invalid Stripe webhook signature. The request could not be verified.',
+    retryable: false,
+  },
+
+  // 500 — Billing
+  {
+    code: ErrorCode.BILLING_SUBSCRIPTION_FAILED,
+    httpStatus: 500,
+    description: 'Billing subscription operation failed.',
+    retryable: true,
+  },
+  {
+    code: ErrorCode.BILLING_INVOICE_FAILED,
+    httpStatus: 500,
+    description: 'Billing invoice retrieval failed.',
+    retryable: true,
+  },
+  {
+    code: ErrorCode.BILLING_PORTAL_FAILED,
+    httpStatus: 500,
+    description: 'Failed to create Stripe customer portal session.',
+    retryable: true,
   },
 
   // 503

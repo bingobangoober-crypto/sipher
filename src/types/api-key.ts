@@ -48,6 +48,34 @@ export const TIER_LIMITS: Record<ApiKeyTier, TierLimits> = {
   },
 }
 
+// ─── Operation Categories (for daily quota metering) ───────────────────────
+
+export type OperationCategory =
+  | 'stealth'
+  | 'commitment'
+  | 'transfer'
+  | 'scan'
+  | 'viewing_key'
+  | 'proof'
+  | 'privacy'
+  | 'compute'
+  | 'swap'
+  | 'governance'
+  | 'compliance'
+  | 'session'
+  | 'jito'
+
+export interface DailyQuotas {
+  totalPerDay: number
+  perCategoryPerDay: number
+}
+
+export const DAILY_QUOTAS: Record<ApiKeyTier, DailyQuotas> = {
+  free: { totalPerDay: 100, perCategoryPerDay: 50 },
+  pro: { totalPerDay: 10_000, perCategoryPerDay: 2_000 },
+  enterprise: { totalPerDay: 100_000, perCategoryPerDay: 20_000 },
+}
+
 declare global {
   namespace Express {
     interface Request {

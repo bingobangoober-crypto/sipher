@@ -3468,6 +3468,169 @@ export const openApiSpec = {
         },
       },
     },
+    // ─── Billing & Usage ──────────────────────────────────────────────────────
+    '/v1/billing/usage': {
+      get: {
+        tags: ['Billing & Usage'],
+        operationId: 'getBillingUsage',
+        summary: 'Get current period usage',
+        description: 'Returns daily operation usage broken down by category for the current API key.',
+        responses: {
+          200: {
+            description: 'Usage data retrieved',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        date: { type: 'string', format: 'date' },
+                        tier: { type: 'string', enum: ['free', 'pro', 'enterprise'] },
+                        total: { type: 'integer' },
+                        quotaTotal: { type: 'integer' },
+                        categories: { type: 'object', additionalProperties: { type: 'object', properties: { count: { type: 'integer' }, quota: { type: 'integer' } } } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/v1/billing/subscription': {
+      get: {
+        tags: ['Billing & Usage'],
+        operationId: 'getBillingSubscription',
+        summary: 'Get current subscription',
+        description: 'Returns the current subscription details for the API key.',
+        responses: {
+          200: {
+            description: 'Subscription details',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        plan: { type: 'string', enum: ['free', 'pro', 'enterprise'] },
+                        status: { type: 'string', enum: ['active', 'past_due', 'canceled'] },
+                        currentPeriodStart: { type: 'string', format: 'date-time' },
+                        currentPeriodEnd: { type: 'string', format: 'date-time' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/v1/billing/subscribe': {
+      post: {
+        tags: ['Billing & Usage'],
+        operationId: 'createBillingSubscription',
+        summary: 'Create or change subscription',
+        description: 'Create a new subscription or change the plan of an existing active subscription.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['plan'],
+                properties: {
+                  plan: { type: 'string', enum: ['free', 'pro', 'enterprise'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Subscription created or updated',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } },
+          },
+          400: { description: 'Validation error', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/billing/invoices': {
+      get: {
+        tags: ['Billing & Usage'],
+        operationId: 'listBillingInvoices',
+        summary: 'List invoices',
+        description: 'Returns paginated invoices for the current API key.',
+        parameters: [
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 } },
+          { name: 'offset', in: 'query', schema: { type: 'integer', minimum: 0, default: 0 } },
+        ],
+        responses: {
+          200: {
+            description: 'Invoices retrieved',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: { invoices: { type: 'array' }, total: { type: 'integer' }, limit: { type: 'integer' }, offset: { type: 'integer' } } } } } } },
+          },
+        },
+      },
+    },
+    '/v1/billing/portal': {
+      post: {
+        tags: ['Billing & Usage'],
+        operationId: 'createBillingPortal',
+        summary: 'Generate customer portal URL',
+        description: 'Creates a Stripe customer portal session URL. Requires pro or enterprise tier.',
+        responses: {
+          200: {
+            description: 'Portal session created',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: { id: { type: 'string' }, url: { type: 'string', format: 'uri' }, expiresAt: { type: 'string', format: 'date-time' } } } } } } },
+          },
+          403: { description: 'Tier access denied', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+    '/v1/billing/webhook': {
+      post: {
+        tags: ['Billing & Usage'],
+        operationId: 'handleBillingWebhook',
+        summary: 'Stripe webhook receiver',
+        description: 'Receives and validates Stripe webhook events. Requires stripe-signature header. Bypasses API key auth.',
+        security: [],
+        parameters: [
+          { name: 'stripe-signature', in: 'header', required: true, schema: { type: 'string' }, description: 'Stripe webhook signature for verification' },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['type', 'data'],
+                properties: {
+                  type: { type: 'string', enum: ['invoice.paid', 'invoice.payment_failed', 'customer.subscription.updated', 'customer.subscription.deleted'] },
+                  data: { type: 'object' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Webhook processed',
+            content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', properties: { eventId: { type: 'string' }, type: { type: 'string' }, processed: { type: 'boolean' } } } } } } },
+          },
+          401: { description: 'Invalid webhook signature', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
     '/v1/jito/bundle/{id}': {
       get: {
         tags: ['Gas Abstraction'],
@@ -3529,5 +3692,6 @@ export const openApiSpec = {
     { name: 'Compliance', description: 'Enterprise compliance endpoints — selective disclosure, audit reports, and auditor verification' },
     { name: 'Governance', description: 'Privacy-preserving governance — encrypted ballots via Pedersen commitments, nullifier-based double-vote prevention, and homomorphic vote tallying' },
     { name: 'Gas Abstraction', description: 'Jito bundle relay for MEV-protected privacy transactions with optional gas sponsorship' },
+    { name: 'Billing & Usage', description: 'Stripe billing, subscription management, usage metering, and daily operation quotas' },
   ],
 }

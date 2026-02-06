@@ -20,6 +20,7 @@ import sessionRouter from './session.js'
 import complianceRouter from './compliance.js'
 import governanceRouter from './governance.js'
 import jitoRouter from './jito.js'
+import billingRouter from './billing.js'
 import adminRouter from './admin.js'
 
 const router = Router()
@@ -45,6 +46,7 @@ router.use(sessionRouter)
 router.use(complianceRouter)
 router.use(governanceRouter)
 router.use(jitoRouter)
+router.use(billingRouter)
 router.use('/admin', adminRouter)
 
 export default router
