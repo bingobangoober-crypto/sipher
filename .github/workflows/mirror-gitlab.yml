@@ -22,5 +22,6 @@ jobs:
 
       - name: Mirror to GitLab
         run: |
+          ssh-keyscan -t ed25519 gitlab.com >> ~/.ssh/known_hosts
           git remote add gitlab git@gitlab.com:sip-protocol/sipher.git
           git push gitlab main --force
