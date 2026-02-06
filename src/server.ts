@@ -136,6 +136,11 @@ app.get('/', (_req, res) => {
         status: 'GET /v1/arcium/compute/:id/status',
         decrypt: 'POST /v1/arcium/decrypt',
       },
+      inco: {
+        encrypt: 'POST /v1/inco/encrypt',
+        compute: 'POST /v1/inco/compute',
+        decrypt: 'POST /v1/inco/decrypt',
+      },
       admin: {
         listKeys: 'GET /v1/admin/keys',
         createKey: 'POST /v1/admin/keys',

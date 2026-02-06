@@ -14,6 +14,8 @@ const SENSITIVE_KEYS = new Set([
   'key',
   'privateKey',
   'encryptedInputs',
+  'plaintext',
+  'ciphertexts',
 ])
 
 function sanitizeBody(body: unknown): unknown {
