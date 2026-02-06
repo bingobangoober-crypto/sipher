@@ -73,6 +73,15 @@ export const openApiSpec = {
         description: 'API key for authentication. Also accepts Authorization: Bearer <key>.',
       },
     },
+    parameters: {
+      SessionId: {
+        name: 'X-Session-Id',
+        in: 'header',
+        required: false,
+        schema: { type: 'string', pattern: '^sess_[0-9a-f]{64}$' },
+        description: 'Session ID to apply stored defaults (chain, backend, privacy level) to this request. Obtain via POST /v1/sessions.',
+      },
+    },
     schemas: {
       ErrorResponse: errorResponse,
       StealthMetaAddress: {
@@ -2970,6 +2979,218 @@ export const openApiSpec = {
         },
       },
     },
+
+    // ─── Sessions ────────────────────────────────────────────────────────────
+
+    '/v1/sessions': {
+      post: {
+        tags: ['Sessions'],
+        operationId: 'createSession',
+        summary: 'Create agent session with default parameters (pro+)',
+        description: 'Creates a session that stores default parameters (chain, backend, privacy level, etc.) applied to all subsequent requests via the X-Session-Id header. Requires pro or enterprise tier.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['defaults'],
+                properties: {
+                  defaults: {
+                    type: 'object',
+                    properties: {
+                      chain: { type: 'string', enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'near', 'aptos', 'sui', 'cosmos', 'osmosis', 'injective', 'celestia', 'sei', 'dydx', 'bitcoin', 'zcash'] },
+                      privacyLevel: { type: 'string', enum: ['standard', 'shielded', 'maximum'] },
+                      rpcProvider: { type: 'string', enum: ['helius', 'quicknode', 'triton', 'generic'] },
+                      backend: { type: 'string', enum: ['sip-native', 'arcium', 'inco'] },
+                      defaultViewingKey: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                    },
+                  },
+                  ttlSeconds: { type: 'integer', minimum: 60, maximum: 86400, description: 'Session TTL in seconds (default: 3600, max: 86400)' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Session created',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        sessionId: { type: 'string', pattern: '^sess_[0-9a-f]{64}$' },
+                        defaults: { type: 'object' },
+                        createdAt: { type: 'integer' },
+                        expiresAt: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid request body', content: { 'application/json': { schema: errorResponse } } },
+          403: { description: 'Tier access denied (pro+ required)', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
+
+    '/v1/sessions/{id}': {
+      get: {
+        tags: ['Sessions'],
+        operationId: 'getSession',
+        summary: 'Get session configuration (pro+)',
+        description: 'Retrieves session details including defaults and expiry. Only the session owner (same API key) can access it.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', pattern: '^sess_[0-9a-f]{64}$' },
+            description: 'Session ID returned from POST /v1/sessions',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Session found',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        sessionId: { type: 'string' },
+                        defaults: { type: 'object' },
+                        createdAt: { type: 'integer' },
+                        expiresAt: { type: 'integer' },
+                        lastAccessedAt: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid session ID format', content: { 'application/json': { schema: errorResponse } } },
+          403: { description: 'Tier access denied (pro+ required)', content: { 'application/json': { schema: errorResponse } } },
+          404: { description: 'Session not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+      patch: {
+        tags: ['Sessions'],
+        operationId: 'updateSession',
+        summary: 'Update session defaults (pro+)',
+        description: 'Merges new defaults into the existing session. Only provided keys are updated; omitted keys remain unchanged.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', pattern: '^sess_[0-9a-f]{64}$' },
+            description: 'Session ID returned from POST /v1/sessions',
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['defaults'],
+                properties: {
+                  defaults: {
+                    type: 'object',
+                    properties: {
+                      chain: { type: 'string', enum: ['solana', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'base', 'near', 'aptos', 'sui', 'cosmos', 'osmosis', 'injective', 'celestia', 'sei', 'dydx', 'bitcoin', 'zcash'] },
+                      privacyLevel: { type: 'string', enum: ['standard', 'shielded', 'maximum'] },
+                      rpcProvider: { type: 'string', enum: ['helius', 'quicknode', 'triton', 'generic'] },
+                      backend: { type: 'string', enum: ['sip-native', 'arcium', 'inco'] },
+                      defaultViewingKey: { type: 'string', pattern: '^0x[0-9a-fA-F]+$' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Session updated',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        sessionId: { type: 'string' },
+                        defaults: { type: 'object' },
+                        expiresAt: { type: 'integer' },
+                        lastAccessedAt: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid request body or session ID', content: { 'application/json': { schema: errorResponse } } },
+          403: { description: 'Tier access denied (pro+ required)', content: { 'application/json': { schema: errorResponse } } },
+          404: { description: 'Session not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+      delete: {
+        tags: ['Sessions'],
+        operationId: 'deleteSession',
+        summary: 'Delete session (pro+)',
+        description: 'Ends and deletes the session. The session ID will no longer be valid for subsequent requests.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', pattern: '^sess_[0-9a-f]{64}$' },
+            description: 'Session ID returned from POST /v1/sessions',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Session deleted',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        sessionId: { type: 'string' },
+                        deleted: { type: 'boolean' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Invalid session ID format', content: { 'application/json': { schema: errorResponse } } },
+          403: { description: 'Tier access denied (pro+ required)', content: { 'application/json': { schema: errorResponse } } },
+          404: { description: 'Session not found', content: { 'application/json': { schema: errorResponse } } },
+        },
+      },
+    },
   },
   tags: [
     { name: 'Health', description: 'Server health, readiness, and error catalog' },
@@ -2986,6 +3207,7 @@ export const openApiSpec = {
     { name: 'Arcium', description: 'Arcium MPC compute backend — submit computations, poll status, decrypt results' },
     { name: 'Inco', description: 'Inco FHE compute backend — encrypt values, compute on ciphertexts, decrypt results' },
     { name: 'Swap', description: 'Privacy-preserving token swaps via Jupiter DEX with stealth address routing' },
+    { name: 'Sessions', description: 'Agent session management — configure default parameters (chain, backend, privacy level) applied to all requests' },
     { name: 'Compliance', description: 'Enterprise compliance endpoints — selective disclosure, audit reports, and auditor verification' },
   ],
 }
