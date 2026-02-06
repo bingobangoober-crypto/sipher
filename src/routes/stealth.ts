@@ -13,8 +13,6 @@ const router = Router()
 
 // ─── Supported Chains ────────────────────────────────────────────────────────
 
-// Ed25519 chains: 32-byte keys (64 hex chars)
-// Secp256k1 chains: 33-byte compressed keys (66 hex chars)
 // SDK-supported chains (matches @sip-protocol/sdk VALID_CHAIN_IDS)
 // Ed25519 chains: 32-byte keys (64 hex chars)
 // Secp256k1 chains: 33-byte compressed keys (66 hex chars)
@@ -174,7 +172,7 @@ router.post(
       const results: Array<{
         index: number
         success: boolean
-        data?: any
+        data?: { metaAddress: unknown; spendingPrivateKey: unknown; viewingPrivateKey: unknown }
         error?: string
       }> = []
 
@@ -190,11 +188,11 @@ router.post(
               viewingPrivateKey: result.viewingPrivateKey,
             },
           })
-        } catch (err: any) {
+        } catch (err: unknown) {
           results.push({
             index: i,
             success: false,
-            error: err.message || 'Generation failed',
+            error: err instanceof Error ? err.message : 'Generation failed',
           })
         }
       }
