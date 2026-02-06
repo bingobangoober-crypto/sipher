@@ -72,6 +72,10 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 *ComplianceApi* | [**complianceDisclose**](docs/ComplianceApi.md#compliancediscloseoperation) | **POST** /v1/compliance/disclose | Selective disclosure with scoped viewing key (enterprise)
 *ComplianceApi* | [**complianceReport**](docs/ComplianceApi.md#compliancereportoperation) | **POST** /v1/compliance/report | Generate encrypted audit report (enterprise)
 *ComplianceApi* | [**getComplianceReport**](docs/ComplianceApi.md#getcompliancereport) | **GET** /v1/compliance/report/{id} | Retrieve generated compliance report (enterprise)
+*GovernanceApi* | [**encryptBallot**](docs/GovernanceApi.md#encryptballotoperation) | **POST** /v1/governance/ballot/encrypt | Encrypt a vote ballot
+*GovernanceApi* | [**getTally**](docs/GovernanceApi.md#gettally) | **GET** /v1/governance/tally/{id} | Get tally result
+*GovernanceApi* | [**submitBallot**](docs/GovernanceApi.md#submitballotoperation) | **POST** /v1/governance/ballot/submit | Submit encrypted ballot to a proposal
+*GovernanceApi* | [**tallyVotes**](docs/GovernanceApi.md#tallyvotesoperation) | **POST** /v1/governance/tally | Tally votes for a proposal
 *HealthApi* | [**getErrors**](docs/HealthApi.md#geterrors) | **GET** /v1/errors | Error code catalog
 *HealthApi* | [**getHealth**](docs/HealthApi.md#gethealth) | **GET** /v1/health | Health check
 *HealthApi* | [**getReady**](docs/HealthApi.md#getready) | **GET** /v1/ready | Readiness probe
@@ -90,6 +94,10 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 *RPCApi* | [**getRpcProviders**](docs/RPCApi.md#getrpcproviders) | **GET** /v1/rpc/providers | List supported RPC providers and active configuration
 *ScanApi* | [**scanPayments**](docs/ScanApi.md#scanpaymentsoperation) | **POST** /v1/scan/payments | Scan for incoming shielded payments
 *ScanApi* | [**scanPaymentsBatch**](docs/ScanApi.md#scanpaymentsbatchoperation) | **POST** /v1/scan/payments/batch | Batch scan for payments across multiple key pairs
+*SessionsApi* | [**createSession**](docs/SessionsApi.md#createsessionoperation) | **POST** /v1/sessions | Create agent session with default parameters (pro+)
+*SessionsApi* | [**deleteSession**](docs/SessionsApi.md#deletesession) | **DELETE** /v1/sessions/{id} | Delete session (pro+)
+*SessionsApi* | [**getSession**](docs/SessionsApi.md#getsession) | **GET** /v1/sessions/{id} | Get session configuration (pro+)
+*SessionsApi* | [**updateSession**](docs/SessionsApi.md#updatesessionoperation) | **PATCH** /v1/sessions/{id} | Update session defaults (pro+)
 *StealthApi* | [**stealthCheck**](docs/StealthApi.md#stealthcheckoperation) | **POST** /v1/stealth/check | Check stealth address ownership
 *StealthApi* | [**stealthDerive**](docs/StealthApi.md#stealthderiveoperation) | **POST** /v1/stealth/derive | Derive one-time stealth address
 *StealthApi* | [**stealthGenerate**](docs/StealthApi.md#stealthgenerateoperation) | **POST** /v1/stealth/generate | Generate stealth meta-address keypair
@@ -151,6 +159,10 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 - [ComputeIncoCiphertexts200Response](docs/ComputeIncoCiphertexts200Response.md)
 - [ComputeIncoCiphertexts200ResponseData](docs/ComputeIncoCiphertexts200ResponseData.md)
 - [ComputeIncoCiphertextsRequest](docs/ComputeIncoCiphertextsRequest.md)
+- [CreateSession201Response](docs/CreateSession201Response.md)
+- [CreateSession201ResponseData](docs/CreateSession201ResponseData.md)
+- [CreateSessionRequest](docs/CreateSessionRequest.md)
+- [CreateSessionRequestDefaults](docs/CreateSessionRequestDefaults.md)
 - [CsplTransfer200Response](docs/CsplTransfer200Response.md)
 - [CsplTransfer200ResponseData](docs/CsplTransfer200ResponseData.md)
 - [CsplTransferRequest](docs/CsplTransferRequest.md)
@@ -167,6 +179,11 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 - [DecryptIncoResult200Response](docs/DecryptIncoResult200Response.md)
 - [DecryptIncoResult200ResponseData](docs/DecryptIncoResult200ResponseData.md)
 - [DecryptIncoResultRequest](docs/DecryptIncoResultRequest.md)
+- [DeleteSession200Response](docs/DeleteSession200Response.md)
+- [DeleteSession200ResponseData](docs/DeleteSession200ResponseData.md)
+- [EncryptBallot200Response](docs/EncryptBallot200Response.md)
+- [EncryptBallot200ResponseData](docs/EncryptBallot200ResponseData.md)
+- [EncryptBallotRequest](docs/EncryptBallotRequest.md)
 - [EncryptIncoValue200Response](docs/EncryptIncoValue200Response.md)
 - [EncryptIncoValue200ResponseData](docs/EncryptIncoValue200ResponseData.md)
 - [EncryptIncoValueRequest](docs/EncryptIncoValueRequest.md)
@@ -193,6 +210,10 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 - [GetRpcProviders200ResponseData](docs/GetRpcProviders200ResponseData.md)
 - [GetRpcProviders200ResponseDataActive](docs/GetRpcProviders200ResponseDataActive.md)
 - [GetRpcProviders200ResponseDataSupportedInner](docs/GetRpcProviders200ResponseDataSupportedInner.md)
+- [GetSession200Response](docs/GetSession200Response.md)
+- [GetSession200ResponseData](docs/GetSession200ResponseData.md)
+- [GetTally200Response](docs/GetTally200Response.md)
+- [GetTally200ResponseData](docs/GetTally200ResponseData.md)
 - [NearTransferData](docs/NearTransferData.md)
 - [NearTransferDataActionsInner](docs/NearTransferDataActionsInner.md)
 - [PrivacyScore200Response](docs/PrivacyScore200Response.md)
@@ -259,6 +280,12 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 - [SubmitArciumComputation200ResponseData](docs/SubmitArciumComputation200ResponseData.md)
 - [SubmitArciumComputationRequest](docs/SubmitArciumComputationRequest.md)
 - [SubmitArciumComputationRequestViewingKey](docs/SubmitArciumComputationRequestViewingKey.md)
+- [SubmitBallot200Response](docs/SubmitBallot200Response.md)
+- [SubmitBallot200ResponseData](docs/SubmitBallot200ResponseData.md)
+- [SubmitBallotRequest](docs/SubmitBallotRequest.md)
+- [TallyVotes200Response](docs/TallyVotes200Response.md)
+- [TallyVotes200ResponseData](docs/TallyVotes200ResponseData.md)
+- [TallyVotesRequest](docs/TallyVotesRequest.md)
 - [TransferClaim200Response](docs/TransferClaim200Response.md)
 - [TransferClaim200ResponseData](docs/TransferClaim200ResponseData.md)
 - [TransferClaimRequest](docs/TransferClaimRequest.md)
@@ -272,6 +299,9 @@ All URIs are relative to *https://sipher.sip-protocol.org*
 - [TransferShield200Response](docs/TransferShield200Response.md)
 - [TransferShield200ResponseData](docs/TransferShield200ResponseData.md)
 - [TransferShieldRequest](docs/TransferShieldRequest.md)
+- [UpdateSession200Response](docs/UpdateSession200Response.md)
+- [UpdateSession200ResponseData](docs/UpdateSession200ResponseData.md)
+- [UpdateSessionRequest](docs/UpdateSessionRequest.md)
 - [ViewingKey](docs/ViewingKey.md)
 - [ViewingKeyDecrypt200Response](docs/ViewingKeyDecrypt200Response.md)
 - [ViewingKeyDecrypt200ResponseData](docs/ViewingKeyDecrypt200ResponseData.md)

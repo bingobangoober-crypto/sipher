@@ -49,10 +49,19 @@ export function TransferPrivate200ResponseDataChainDataFromJSONTyped(json: any, 
     if (json == null) {
         return json;
     }
-    switch (json['type']) {
-        default:
-            return json;
+    if (typeof json !== 'object') {
+        return json;
     }
+    if (instanceOfEvmTransferData(json)) {
+        return EvmTransferDataFromJSONTyped(json, true);
+    }
+    if (instanceOfNearTransferData(json)) {
+        return NearTransferDataFromJSONTyped(json, true);
+    }
+    if (instanceOfSolanaTransferData(json)) {
+        return SolanaTransferDataFromJSONTyped(json, true);
+    }
+    return {} as any;
 }
 
 export function TransferPrivate200ResponseDataChainDataToJSON(json: any): any {
@@ -63,9 +72,18 @@ export function TransferPrivate200ResponseDataChainDataToJSONTyped(value?: Trans
     if (value == null) {
         return value;
     }
-    switch (value['type']) {
-        default:
-            return value;
+    if (typeof value !== 'object') {
+        return value;
     }
+    if (instanceOfEvmTransferData(value)) {
+        return EvmTransferDataToJSON(value as EvmTransferData);
+    }
+    if (instanceOfNearTransferData(value)) {
+        return NearTransferDataToJSON(value as NearTransferData);
+    }
+    if (instanceOfSolanaTransferData(value)) {
+        return SolanaTransferDataToJSON(value as SolanaTransferData);
+    }
+    return {};
 }
 

@@ -672,7 +672,6 @@ export const openApiSpec = {
                               required: ['type', 'receiverId', 'actions'],
                             },
                           ],
-                          discriminator: { propertyName: 'type' },
                         },
                       },
                     },
