@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 71 endpoints | 298 tests | 17 chains supported
+**Stats:** 73 endpoints | 316 tests | 17 chains supported
 
 ---
 
@@ -55,7 +55,7 @@
 - **Logging:** Pino v9 (structured JSON, audit logs)
 - **Docs:** swagger-ui-express (OpenAPI 3.1)
 - **Cache:** Redis 7 (rate limiting, idempotency) with in-memory fallback
-- **Testing:** Vitest + Supertest (298 tests)
+- **Testing:** Vitest + Supertest (316 tests)
 - **Deployment:** Docker + GHCR → VPS (port 5006)
 - **Domain:** sipher.sip-protocol.org
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (298 tests)
+pnpm test -- --run              # Run tests (316 tests)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 
@@ -222,7 +222,7 @@ sipher/
 │   ├── errors/
 │   │   └── codes.ts                # ErrorCode enum + ERROR_CATALOG
 │   ├── openapi/
-│   │   └── spec.ts                 # OpenAPI 3.1 spec (all 26 endpoints)
+│   │   └── spec.ts                 # OpenAPI 3.1 spec (all endpoints)
 │   ├── middleware/
 │   │   ├── auth.ts                 # X-API-Key (timing-safe)
 │   │   ├── cors.ts                 # Helmet + CORS
@@ -244,12 +244,14 @@ sipher/
 │   │   ├── viewing-key.ts          # generate, derive, verify-hierarchy, disclose, decrypt
 │   │   ├── privacy.ts              # score (surveillance/privacy analysis)
 │   │   ├── rpc.ts                  # GET /v1/rpc/providers (provider info)
+│   │   ├── range-proof.ts          # STARK range proofs (generate, verify)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
 │   │   ├── solana.ts               # Connection manager + RPC latency measurement
 │   │   ├── rpc-provider.ts         # Provider factory (helius, quicknode, triton, generic)
 │   │   ├── transaction-builder.ts  # Unsigned tx serialization (Solana)
-│   │   └── chain-transfer-builder.ts # Chain-agnostic transfer dispatch (Solana/EVM/NEAR)
+│   │   ├── chain-transfer-builder.ts # Chain-agnostic transfer dispatch (Solana/EVM/NEAR)
+│   │   └── stark-provider.ts       # STARK range proof provider (M31 limbs, mock prover)
 │   └── types/
 │       └── api.ts                  # ApiResponse<T>, HealthResponse
 ├── skill.md                        # OpenClaw skill file (GET /skill.md)
@@ -257,7 +259,7 @@ sipher/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   └── demo-flow.ts                # Full E2E demo (21 endpoints)
-├── tests/                          # 298 tests across 17+ suites
+├── tests/                          # 316 tests across 18+ suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -274,7 +276,8 @@ sipher/
 │   ├── privacy-score.test.ts       # 10 tests (scoring, factors, validation)
 │   ├── viewing-key-hierarchy.test.ts # 11 tests (derive, verify, multi-level)
 │   ├── rpc-provider.test.ts        # 14 tests (factory, providers, masking, endpoint)
-│   └── private-transfer.test.ts   # 25 tests (Solana/EVM/NEAR, unsupported, validation, idempotency)
+│   ├── private-transfer.test.ts   # 25 tests (Solana/EVM/NEAR, unsupported, validation, idempotency)
+│   └── range-proof.test.ts        # 18 tests (generate, verify, edge cases, idempotency, M31 math)
 ├── Dockerfile                      # Multi-stage Alpine
 ├── docker-compose.yml              # name: sipher, port 5006
 ├── .github/workflows/deploy.yml    # GHCR → VPS
@@ -287,7 +290,7 @@ sipher/
 
 ---
 
-## API ENDPOINTS (27 endpoints)
+## API ENDPOINTS (29 endpoints)
 
 All return `ApiResponse<T>`: `{ success, data?, error? }`
 
@@ -319,6 +322,8 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | POST | `/v1/viewing-key/verify-hierarchy` | Verify parent-child key relationship | Yes | — |
 | POST | `/v1/viewing-key/disclose` | Encrypt tx data for auditor | Yes | ✓ |
 | POST | `/v1/viewing-key/decrypt` | Decrypt tx data with viewing key | Yes | — |
+| POST | `/v1/proofs/range/generate` | Generate STARK range proof (value >= threshold) | Yes | ✓ |
+| POST | `/v1/proofs/range/verify` | Verify STARK range proof | Yes | — |
 | POST | `/v1/privacy/score` | Wallet privacy/surveillance score (0-100) | Yes | — |
 | GET | `/v1/rpc/providers` | Active RPC provider info + supported list | No | — |
 
@@ -382,7 +387,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (298 tests must pass)
+- Run `pnpm test -- --run` after code changes (316 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -429,11 +434,11 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | 🔲 Planned |
 | 6 | Enterprise | 6 | 🔲 Planned |
 
-**Progress:** 27/38 issues complete | 298 tests | 71 endpoints | 17 chains
+**Progress:** 28/38 issues complete | 316 tests | 73 endpoints | 17 chains
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-06
-**Status:** Phase 4 Complete | 71 Endpoints | 298 Tests | 17 Chains | Agent #274 Active
+**Status:** Phase 5 In Progress | 73 Endpoints | 316 Tests | 17 Chains | Agent #274 Active

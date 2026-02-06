@@ -488,6 +488,51 @@ Supported tokens: `C-wSOL`, `C-USDC`, `C-USDT`. All C-SPL endpoints support `Ide
 
 ---
 
+### STARK Range Proofs (Beta)
+
+Prove that a hidden value in a Pedersen commitment meets a threshold — without revealing the value. Uses M31 limb decomposition (Mersenne prime 2^31-1). Currently uses a mock STARK prover; real Murkl WASM integration coming soon.
+
+#### Generate Range Proof
+
+```
+POST /v1/proofs/range/generate
+Content-Type: application/json
+
+{
+  "value": "1000000000",
+  "threshold": "500000000",
+  "blindingFactor": "0x...",
+  "commitment": "0x..."
+}
+```
+
+**Parameters:**
+- `value` — The secret value to prove (not revealed in the proof)
+- `threshold` — Minimum value (public, included in proof)
+- `blindingFactor` — 32-byte hex blinding factor for commitment
+- `commitment` — Optional existing Pedersen commitment. If omitted, auto-created from value + blindingFactor.
+
+Returns: `proof` (type, proof hex, publicInputs), `commitment`, `metadata` (prover, decomposition, limbCount, security).
+
+Supports `Idempotency-Key` header.
+
+#### Verify Range Proof
+
+```
+POST /v1/proofs/range/verify
+Content-Type: application/json
+
+{
+  "type": "range",
+  "proof": "0x...",
+  "publicInputs": ["0x...", "0x..."]
+}
+```
+
+Returns: `{ valid: boolean }`
+
+---
+
 ## Idempotency
 
 Mutation endpoints (`/transfer/shield`, `/transfer/claim`, `/transfer/private`, `/commitment/create`, `/viewing-key/disclose`) support the `Idempotency-Key` header. Send a UUID v4 value to safely retry requests — duplicate keys return the cached response with `Idempotency-Replayed: true` header.
