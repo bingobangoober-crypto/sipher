@@ -1,0 +1,41 @@
+
+# PrivateSwapRequestRecipientMetaAddress
+
+Optional stealth meta-address. If omitted, an ephemeral one is generated.
+
+## Properties
+
+Name | Type
+------------ | -------------
+`spendingKey` | string
+`viewingKey` | string
+`chain` | string
+`label` | string
+
+## Example
+
+```typescript
+import type { PrivateSwapRequestRecipientMetaAddress } from '@sip-protocol/sipher-client'
+
+// TODO: Update the object below with actual values
+const example = {
+  "spendingKey": 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef,
+  "viewingKey": 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef,
+  "chain": null,
+  "label": null,
+} satisfies PrivateSwapRequestRecipientMetaAddress
+
+console.log(example)
+
+// Convert the instance to a JSON string
+const exampleJSON: string = JSON.stringify(example)
+console.log(exampleJSON)
+
+// Parse the JSON string back to an object
+const exampleParsed = JSON.parse(exampleJSON) as PrivateSwapRequestRecipientMetaAddress
+console.log(exampleParsed)
+```
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
