@@ -180,8 +180,14 @@ export async function getDailyUsage(
   const categories: Record<string, { count: number; quota: number }> = {}
   let total = 0
 
-  for (const cat of ALL_CATEGORIES) {
-    const { count } = await getUsage(apiKey, cat)
+  const usageResults = await Promise.all(
+    ALL_CATEGORIES.map(async (cat) => {
+      const { count } = await getUsage(apiKey, cat)
+      return { cat, count }
+    })
+  )
+
+  for (const { cat, count } of usageResults) {
     categories[cat] = { count, quota: quotas.perCategoryPerDay }
     total += count
   }
