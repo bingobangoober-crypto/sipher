@@ -41,6 +41,12 @@ export interface SubmitBallot200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof SubmitBallot200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {SubmitBallot200ResponseData}
      * @memberof SubmitBallot200Response
      */
@@ -66,6 +72,7 @@ export function SubmitBallot200ResponseFromJSONTyped(json: any, ignoreDiscrimina
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : SubmitBallot200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function SubmitBallot200ResponseToJSONTyped(value?: SubmitBallot200Respon
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': SubmitBallot200ResponseDataToJSON(value['data']),
     };
 }

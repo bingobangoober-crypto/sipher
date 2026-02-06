@@ -5,6 +5,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Success** | Pointer to **bool** |  | [optional] 
+**Beta** | Pointer to **bool** |  | [optional] 
+**Warning** | Pointer to **string** |  | [optional] 
 **Data** | Pointer to [**ProofsValidityGenerate200ResponseData**](ProofsValidityGenerate200ResponseData.md) |  | [optional] 
 
 ## Methods
@@ -50,6 +52,56 @@ SetSuccess sets Success field to given value.
 `func (o *ProofsValidityGenerate200Response) HasSuccess() bool`
 
 HasSuccess returns a boolean if a field has been set.
+
+### GetBeta
+
+`func (o *ProofsValidityGenerate200Response) GetBeta() bool`
+
+GetBeta returns the Beta field if non-nil, zero value otherwise.
+
+### GetBetaOk
+
+`func (o *ProofsValidityGenerate200Response) GetBetaOk() (*bool, bool)`
+
+GetBetaOk returns a tuple with the Beta field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetBeta
+
+`func (o *ProofsValidityGenerate200Response) SetBeta(v bool)`
+
+SetBeta sets Beta field to given value.
+
+### HasBeta
+
+`func (o *ProofsValidityGenerate200Response) HasBeta() bool`
+
+HasBeta returns a boolean if a field has been set.
+
+### GetWarning
+
+`func (o *ProofsValidityGenerate200Response) GetWarning() string`
+
+GetWarning returns the Warning field if non-nil, zero value otherwise.
+
+### GetWarningOk
+
+`func (o *ProofsValidityGenerate200Response) GetWarningOk() (*string, bool)`
+
+GetWarningOk returns a tuple with the Warning field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetWarning
+
+`func (o *ProofsValidityGenerate200Response) SetWarning(v string)`
+
+SetWarning sets Warning field to given value.
+
+### HasWarning
+
+`func (o *ProofsValidityGenerate200Response) HasWarning() bool`
+
+HasWarning returns a boolean if a field has been set.
 
 ### GetData
 

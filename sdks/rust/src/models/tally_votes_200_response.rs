@@ -17,6 +17,8 @@ pub struct TallyVotes200Response {
     pub success: Option<bool>,
     #[serde(rename = "beta", skip_serializing_if = "Option::is_none")]
     pub beta: Option<bool>,
+    #[serde(rename = "warning", skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
     #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
     pub data: Option<Box<models::TallyVotes200ResponseData>>,
 }
@@ -26,6 +28,7 @@ impl TallyVotes200Response {
         TallyVotes200Response {
             success: None,
             beta: None,
+            warning: None,
             data: None,
         }
     }

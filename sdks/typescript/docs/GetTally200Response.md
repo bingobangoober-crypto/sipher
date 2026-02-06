@@ -8,6 +8,7 @@ Name | Type
 ------------ | -------------
 `success` | boolean
 `beta` | boolean
+`warning` | string
 `data` | [GetTally200ResponseData](GetTally200ResponseData.md)
 
 ## Example
@@ -19,6 +20,7 @@ import type { GetTally200Response } from '@sip-protocol/sipher-client'
 const example = {
   "success": null,
   "beta": null,
+  "warning": null,
   "data": null,
 } satisfies GetTally200Response
 

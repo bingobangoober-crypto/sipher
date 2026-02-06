@@ -35,6 +35,18 @@ export interface ProofsFundingGenerate200Response {
     success?: boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof ProofsFundingGenerate200Response
+     */
+    beta?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProofsFundingGenerate200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {ProofsFundingGenerate200ResponseData}
      * @memberof ProofsFundingGenerate200Response
      */
@@ -59,6 +71,8 @@ export function ProofsFundingGenerate200ResponseFromJSONTyped(json: any, ignoreD
     return {
         
         'success': json['success'] == null ? undefined : json['success'],
+        'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : ProofsFundingGenerate200ResponseDataFromJSON(json['data']),
     };
 }
@@ -75,6 +89,8 @@ export function ProofsFundingGenerate200ResponseToJSONTyped(value?: ProofsFundin
     return {
         
         'success': value['success'],
+        'beta': value['beta'],
+        'warning': value['warning'],
         'data': ProofsFundingGenerate200ResponseDataToJSON(value['data']),
     };
 }

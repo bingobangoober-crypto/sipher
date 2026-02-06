@@ -7,6 +7,8 @@
 Name | Type
 ------------ | -------------
 `success` | boolean
+`beta` | boolean
+`warning` | string
 `data` | [ProofsFundingGenerate200ResponseData](ProofsFundingGenerate200ResponseData.md)
 
 ## Example
@@ -17,6 +19,8 @@ import type { ProofsFundingGenerate200Response } from '@sip-protocol/sipher-clie
 // TODO: Update the object below with actual values
 const example = {
   "success": null,
+  "beta": null,
+  "warning": null,
   "data": null,
 } satisfies ProofsFundingGenerate200Response
 

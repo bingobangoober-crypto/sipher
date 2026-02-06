@@ -21,6 +21,8 @@ var _ MappedNullable = &ProofsFundingGenerate200Response{}
 // ProofsFundingGenerate200Response struct for ProofsFundingGenerate200Response
 type ProofsFundingGenerate200Response struct {
 	Success *bool `json:"success,omitempty"`
+	Beta *bool `json:"beta,omitempty"`
+	Warning *string `json:"warning,omitempty"`
 	Data *ProofsFundingGenerate200ResponseData `json:"data,omitempty"`
 }
 
@@ -73,6 +75,70 @@ func (o *ProofsFundingGenerate200Response) SetSuccess(v bool) {
 	o.Success = &v
 }
 
+// GetBeta returns the Beta field value if set, zero value otherwise.
+func (o *ProofsFundingGenerate200Response) GetBeta() bool {
+	if o == nil || IsNil(o.Beta) {
+		var ret bool
+		return ret
+	}
+	return *o.Beta
+}
+
+// GetBetaOk returns a tuple with the Beta field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ProofsFundingGenerate200Response) GetBetaOk() (*bool, bool) {
+	if o == nil || IsNil(o.Beta) {
+		return nil, false
+	}
+	return o.Beta, true
+}
+
+// HasBeta returns a boolean if a field has been set.
+func (o *ProofsFundingGenerate200Response) HasBeta() bool {
+	if o != nil && !IsNil(o.Beta) {
+		return true
+	}
+
+	return false
+}
+
+// SetBeta gets a reference to the given bool and assigns it to the Beta field.
+func (o *ProofsFundingGenerate200Response) SetBeta(v bool) {
+	o.Beta = &v
+}
+
+// GetWarning returns the Warning field value if set, zero value otherwise.
+func (o *ProofsFundingGenerate200Response) GetWarning() string {
+	if o == nil || IsNil(o.Warning) {
+		var ret string
+		return ret
+	}
+	return *o.Warning
+}
+
+// GetWarningOk returns a tuple with the Warning field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ProofsFundingGenerate200Response) GetWarningOk() (*string, bool) {
+	if o == nil || IsNil(o.Warning) {
+		return nil, false
+	}
+	return o.Warning, true
+}
+
+// HasWarning returns a boolean if a field has been set.
+func (o *ProofsFundingGenerate200Response) HasWarning() bool {
+	if o != nil && !IsNil(o.Warning) {
+		return true
+	}
+
+	return false
+}
+
+// SetWarning gets a reference to the given string and assigns it to the Warning field.
+func (o *ProofsFundingGenerate200Response) SetWarning(v string) {
+	o.Warning = &v
+}
+
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *ProofsFundingGenerate200Response) GetData() ProofsFundingGenerate200ResponseData {
 	if o == nil || IsNil(o.Data) {
@@ -117,6 +183,12 @@ func (o ProofsFundingGenerate200Response) ToMap() (map[string]interface{}, error
 	toSerialize := map[string]interface{}{}
 	if !IsNil(o.Success) {
 		toSerialize["success"] = o.Success
+	}
+	if !IsNil(o.Beta) {
+		toSerialize["beta"] = o.Beta
+	}
+	if !IsNil(o.Warning) {
+		toSerialize["warning"] = o.Warning
 	}
 	if !IsNil(o.Data) {
 		toSerialize["data"] = o.Data

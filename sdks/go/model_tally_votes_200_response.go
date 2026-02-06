@@ -22,6 +22,7 @@ var _ MappedNullable = &TallyVotes200Response{}
 type TallyVotes200Response struct {
 	Success *bool `json:"success,omitempty"`
 	Beta *bool `json:"beta,omitempty"`
+	Warning *string `json:"warning,omitempty"`
 	Data *TallyVotes200ResponseData `json:"data,omitempty"`
 }
 
@@ -106,6 +107,38 @@ func (o *TallyVotes200Response) SetBeta(v bool) {
 	o.Beta = &v
 }
 
+// GetWarning returns the Warning field value if set, zero value otherwise.
+func (o *TallyVotes200Response) GetWarning() string {
+	if o == nil || IsNil(o.Warning) {
+		var ret string
+		return ret
+	}
+	return *o.Warning
+}
+
+// GetWarningOk returns a tuple with the Warning field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TallyVotes200Response) GetWarningOk() (*string, bool) {
+	if o == nil || IsNil(o.Warning) {
+		return nil, false
+	}
+	return o.Warning, true
+}
+
+// HasWarning returns a boolean if a field has been set.
+func (o *TallyVotes200Response) HasWarning() bool {
+	if o != nil && !IsNil(o.Warning) {
+		return true
+	}
+
+	return false
+}
+
+// SetWarning gets a reference to the given string and assigns it to the Warning field.
+func (o *TallyVotes200Response) SetWarning(v string) {
+	o.Warning = &v
+}
+
 // GetData returns the Data field value if set, zero value otherwise.
 func (o *TallyVotes200Response) GetData() TallyVotes200ResponseData {
 	if o == nil || IsNil(o.Data) {
@@ -153,6 +186,9 @@ func (o TallyVotes200Response) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Beta) {
 		toSerialize["beta"] = o.Beta
+	}
+	if !IsNil(o.Warning) {
+		toSerialize["warning"] = o.Warning
 	}
 	if !IsNil(o.Data) {
 		toSerialize["data"] = o.Data

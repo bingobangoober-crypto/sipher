@@ -41,6 +41,12 @@ export interface GetArciumComputationStatus200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof GetArciumComputationStatus200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {GetArciumComputationStatus200ResponseData}
      * @memberof GetArciumComputationStatus200Response
      */
@@ -66,6 +72,7 @@ export function GetArciumComputationStatus200ResponseFromJSONTyped(json: any, ig
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : GetArciumComputationStatus200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function GetArciumComputationStatus200ResponseToJSONTyped(value?: GetArci
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': GetArciumComputationStatus200ResponseDataToJSON(value['data']),
     };
 }

@@ -41,6 +41,12 @@ export interface TallyVotes200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof TallyVotes200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {TallyVotes200ResponseData}
      * @memberof TallyVotes200Response
      */
@@ -66,6 +72,7 @@ export function TallyVotes200ResponseFromJSONTyped(json: any, ignoreDiscriminato
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : TallyVotes200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function TallyVotes200ResponseToJSONTyped(value?: TallyVotes200Response |
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': TallyVotes200ResponseDataToJSON(value['data']),
     };
 }

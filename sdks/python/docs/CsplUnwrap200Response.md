@@ -6,6 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **bool** |  | [optional] 
+**beta** | **bool** |  | [optional] 
+**warning** | **str** |  | [optional] 
 **data** | [**CsplUnwrap200ResponseData**](CsplUnwrap200ResponseData.md) |  | [optional] 
 
 ## Example

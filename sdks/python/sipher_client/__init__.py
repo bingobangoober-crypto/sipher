@@ -19,6 +19,7 @@ __version__ = "0.1.0"
 
 # Define package exports
 __all__ = [
+    "AdminApi",
     "ArciumApi",
     "BackendsApi",
     "BillingUsageApi",
@@ -91,6 +92,9 @@ __all__ = [
     "ComputeIncoCiphertexts200Response",
     "ComputeIncoCiphertexts200ResponseData",
     "ComputeIncoCiphertextsRequest",
+    "CreateAdminKey201Response",
+    "CreateAdminKey201ResponseData",
+    "CreateAdminKeyRequest",
     "CreateBillingPortal200Response",
     "CreateBillingPortal200ResponseData",
     "CreateBillingSubscription200Response",
@@ -126,6 +130,8 @@ __all__ = [
     "EncryptIncoValueRequestPlaintext",
     "ErrorResponse",
     "EvmTransferData",
+    "GetAdminKey200Response",
+    "GetAdminKey200ResponseData",
     "GetArciumComputationStatus200Response",
     "GetArciumComputationStatus200ResponseData",
     "GetBillingSubscription200Response",
@@ -160,6 +166,11 @@ __all__ = [
     "HandleBillingWebhook200Response",
     "HandleBillingWebhook200ResponseData",
     "HandleBillingWebhookRequest",
+    "ListAdminKeys200Response",
+    "ListAdminKeys200ResponseData",
+    "ListAdminTiers200Response",
+    "ListAdminTiers200ResponseData",
+    "ListAdminTiers200ResponseDataTiersInner",
     "ListBillingInvoices200Response",
     "ListBillingInvoices200ResponseData",
     "NearTransferData",
@@ -196,6 +207,8 @@ __all__ = [
     "ProofsValidityGenerate200ResponseDataProof",
     "ProofsValidityGenerateRequest",
     "ProofsValidityVerifyRequest",
+    "RevokeAdminKey200Response",
+    "RevokeAdminKey200ResponseData",
     "ScanPayments200Response",
     "ScanPayments200ResponseData",
     "ScanPayments200ResponseDataPaymentsInner",
@@ -274,6 +287,7 @@ __all__ = [
 ]
 
 # import apis into sdk package
+from sipher_client.api.admin_api import AdminApi as AdminApi
 from sipher_client.api.arcium_api import ArciumApi as ArciumApi
 from sipher_client.api.backends_api import BackendsApi as BackendsApi
 from sipher_client.api.billing_usage_api import BillingUsageApi as BillingUsageApi
@@ -350,6 +364,9 @@ from sipher_client.models.compliance_report_request import ComplianceReportReque
 from sipher_client.models.compute_inco_ciphertexts200_response import ComputeIncoCiphertexts200Response as ComputeIncoCiphertexts200Response
 from sipher_client.models.compute_inco_ciphertexts200_response_data import ComputeIncoCiphertexts200ResponseData as ComputeIncoCiphertexts200ResponseData
 from sipher_client.models.compute_inco_ciphertexts_request import ComputeIncoCiphertextsRequest as ComputeIncoCiphertextsRequest
+from sipher_client.models.create_admin_key201_response import CreateAdminKey201Response as CreateAdminKey201Response
+from sipher_client.models.create_admin_key201_response_data import CreateAdminKey201ResponseData as CreateAdminKey201ResponseData
+from sipher_client.models.create_admin_key_request import CreateAdminKeyRequest as CreateAdminKeyRequest
 from sipher_client.models.create_billing_portal200_response import CreateBillingPortal200Response as CreateBillingPortal200Response
 from sipher_client.models.create_billing_portal200_response_data import CreateBillingPortal200ResponseData as CreateBillingPortal200ResponseData
 from sipher_client.models.create_billing_subscription200_response import CreateBillingSubscription200Response as CreateBillingSubscription200Response
@@ -385,6 +402,8 @@ from sipher_client.models.encrypt_inco_value_request import EncryptIncoValueRequ
 from sipher_client.models.encrypt_inco_value_request_plaintext import EncryptIncoValueRequestPlaintext as EncryptIncoValueRequestPlaintext
 from sipher_client.models.error_response import ErrorResponse as ErrorResponse
 from sipher_client.models.evm_transfer_data import EvmTransferData as EvmTransferData
+from sipher_client.models.get_admin_key200_response import GetAdminKey200Response as GetAdminKey200Response
+from sipher_client.models.get_admin_key200_response_data import GetAdminKey200ResponseData as GetAdminKey200ResponseData
 from sipher_client.models.get_arcium_computation_status200_response import GetArciumComputationStatus200Response as GetArciumComputationStatus200Response
 from sipher_client.models.get_arcium_computation_status200_response_data import GetArciumComputationStatus200ResponseData as GetArciumComputationStatus200ResponseData
 from sipher_client.models.get_billing_subscription200_response import GetBillingSubscription200Response as GetBillingSubscription200Response
@@ -419,6 +438,11 @@ from sipher_client.models.get_tally200_response_data import GetTally200ResponseD
 from sipher_client.models.handle_billing_webhook200_response import HandleBillingWebhook200Response as HandleBillingWebhook200Response
 from sipher_client.models.handle_billing_webhook200_response_data import HandleBillingWebhook200ResponseData as HandleBillingWebhook200ResponseData
 from sipher_client.models.handle_billing_webhook_request import HandleBillingWebhookRequest as HandleBillingWebhookRequest
+from sipher_client.models.list_admin_keys200_response import ListAdminKeys200Response as ListAdminKeys200Response
+from sipher_client.models.list_admin_keys200_response_data import ListAdminKeys200ResponseData as ListAdminKeys200ResponseData
+from sipher_client.models.list_admin_tiers200_response import ListAdminTiers200Response as ListAdminTiers200Response
+from sipher_client.models.list_admin_tiers200_response_data import ListAdminTiers200ResponseData as ListAdminTiers200ResponseData
+from sipher_client.models.list_admin_tiers200_response_data_tiers_inner import ListAdminTiers200ResponseDataTiersInner as ListAdminTiers200ResponseDataTiersInner
 from sipher_client.models.list_billing_invoices200_response import ListBillingInvoices200Response as ListBillingInvoices200Response
 from sipher_client.models.list_billing_invoices200_response_data import ListBillingInvoices200ResponseData as ListBillingInvoices200ResponseData
 from sipher_client.models.near_transfer_data import NearTransferData as NearTransferData
@@ -455,6 +479,8 @@ from sipher_client.models.proofs_validity_generate200_response_data import Proof
 from sipher_client.models.proofs_validity_generate200_response_data_proof import ProofsValidityGenerate200ResponseDataProof as ProofsValidityGenerate200ResponseDataProof
 from sipher_client.models.proofs_validity_generate_request import ProofsValidityGenerateRequest as ProofsValidityGenerateRequest
 from sipher_client.models.proofs_validity_verify_request import ProofsValidityVerifyRequest as ProofsValidityVerifyRequest
+from sipher_client.models.revoke_admin_key200_response import RevokeAdminKey200Response as RevokeAdminKey200Response
+from sipher_client.models.revoke_admin_key200_response_data import RevokeAdminKey200ResponseData as RevokeAdminKey200ResponseData
 from sipher_client.models.scan_payments200_response import ScanPayments200Response as ScanPayments200Response
 from sipher_client.models.scan_payments200_response_data import ScanPayments200ResponseData as ScanPayments200ResponseData
 from sipher_client.models.scan_payments200_response_data_payments_inner import ScanPayments200ResponseDataPaymentsInner as ScanPayments200ResponseDataPaymentsInner

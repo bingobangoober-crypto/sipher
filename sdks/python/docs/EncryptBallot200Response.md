@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **bool** |  | [optional] 
 **beta** | **bool** |  | [optional] 
+**warning** | **str** |  | [optional] 
 **data** | [**EncryptBallot200ResponseData**](EncryptBallot200ResponseData.md) |  | [optional] 
 
 ## Example

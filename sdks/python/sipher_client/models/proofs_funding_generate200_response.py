@@ -18,7 +18,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from sipher_client.models.proofs_funding_generate200_response_data import ProofsFundingGenerate200ResponseData
 from typing import Optional, Set
@@ -29,8 +29,10 @@ class ProofsFundingGenerate200Response(BaseModel):
     ProofsFundingGenerate200Response
     """ # noqa: E501
     success: Optional[StrictBool] = None
+    beta: Optional[StrictBool] = None
+    warning: Optional[StrictStr] = None
     data: Optional[ProofsFundingGenerate200ResponseData] = None
-    __properties: ClassVar[List[str]] = ["success", "data"]
+    __properties: ClassVar[List[str]] = ["success", "beta", "warning", "data"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -87,6 +89,8 @@ class ProofsFundingGenerate200Response(BaseModel):
 
         _obj = cls.model_validate({
             "success": obj.get("success"),
+            "beta": obj.get("beta"),
+            "warning": obj.get("warning"),
             "data": ProofsFundingGenerate200ResponseData.from_dict(obj["data"]) if obj.get("data") is not None else None
         })
         return _obj

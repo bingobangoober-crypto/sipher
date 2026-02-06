@@ -35,6 +35,18 @@ export interface CsplTransfer200Response {
     success?: boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof CsplTransfer200Response
+     */
+    beta?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof CsplTransfer200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {CsplTransfer200ResponseData}
      * @memberof CsplTransfer200Response
      */
@@ -59,6 +71,8 @@ export function CsplTransfer200ResponseFromJSONTyped(json: any, ignoreDiscrimina
     return {
         
         'success': json['success'] == null ? undefined : json['success'],
+        'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : CsplTransfer200ResponseDataFromJSON(json['data']),
     };
 }
@@ -75,6 +89,8 @@ export function CsplTransfer200ResponseToJSONTyped(value?: CsplTransfer200Respon
     return {
         
         'success': value['success'],
+        'beta': value['beta'],
+        'warning': value['warning'],
         'data': CsplTransfer200ResponseDataToJSON(value['data']),
     };
 }

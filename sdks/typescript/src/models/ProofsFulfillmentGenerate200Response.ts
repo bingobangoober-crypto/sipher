@@ -35,6 +35,18 @@ export interface ProofsFulfillmentGenerate200Response {
     success?: boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof ProofsFulfillmentGenerate200Response
+     */
+    beta?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProofsFulfillmentGenerate200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {ProofsFulfillmentGenerate200ResponseData}
      * @memberof ProofsFulfillmentGenerate200Response
      */
@@ -59,6 +71,8 @@ export function ProofsFulfillmentGenerate200ResponseFromJSONTyped(json: any, ign
     return {
         
         'success': json['success'] == null ? undefined : json['success'],
+        'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : ProofsFulfillmentGenerate200ResponseDataFromJSON(json['data']),
     };
 }
@@ -75,6 +89,8 @@ export function ProofsFulfillmentGenerate200ResponseToJSONTyped(value?: ProofsFu
     return {
         
         'success': value['success'],
+        'beta': value['beta'],
+        'warning': value['warning'],
         'data': ProofsFulfillmentGenerate200ResponseDataToJSON(value['data']),
     };
 }

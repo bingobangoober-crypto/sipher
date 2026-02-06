@@ -35,6 +35,18 @@ export interface ProofsValidityGenerate200Response {
     success?: boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof ProofsValidityGenerate200Response
+     */
+    beta?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProofsValidityGenerate200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {ProofsValidityGenerate200ResponseData}
      * @memberof ProofsValidityGenerate200Response
      */
@@ -59,6 +71,8 @@ export function ProofsValidityGenerate200ResponseFromJSONTyped(json: any, ignore
     return {
         
         'success': json['success'] == null ? undefined : json['success'],
+        'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : ProofsValidityGenerate200ResponseDataFromJSON(json['data']),
     };
 }
@@ -75,6 +89,8 @@ export function ProofsValidityGenerate200ResponseToJSONTyped(value?: ProofsValid
     return {
         
         'success': value['success'],
+        'beta': value['beta'],
+        'warning': value['warning'],
         'data': ProofsValidityGenerate200ResponseDataToJSON(value['data']),
     };
 }

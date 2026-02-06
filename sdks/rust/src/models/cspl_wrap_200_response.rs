@@ -15,6 +15,10 @@ use serde::{Deserialize, Serialize};
 pub struct CsplWrap200Response {
     #[serde(rename = "success", skip_serializing_if = "Option::is_none")]
     pub success: Option<bool>,
+    #[serde(rename = "beta", skip_serializing_if = "Option::is_none")]
+    pub beta: Option<bool>,
+    #[serde(rename = "warning", skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
     #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
     pub data: Option<Box<models::CsplWrap200ResponseData>>,
 }
@@ -23,6 +27,8 @@ impl CsplWrap200Response {
     pub fn new() -> CsplWrap200Response {
         CsplWrap200Response {
             success: None,
+            beta: None,
+            warning: None,
             data: None,
         }
     }

@@ -7,6 +7,8 @@
 Name | Type
 ------------ | -------------
 `success` | boolean
+`beta` | boolean
+`warning` | string
 `data` | [ProofsFulfillmentGenerate200ResponseData](ProofsFulfillmentGenerate200ResponseData.md)
 
 ## Example
@@ -17,6 +19,8 @@ import type { ProofsFulfillmentGenerate200Response } from '@sip-protocol/sipher-
 // TODO: Update the object below with actual values
 const example = {
   "success": null,
+  "beta": null,
+  "warning": null,
   "data": null,
 } satisfies ProofsFulfillmentGenerate200Response
 

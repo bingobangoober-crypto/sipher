@@ -66,6 +66,9 @@ tags:
 - description: "Stripe billing, subscription management, usage metering, and daily\
     \ operation quotas"
   name: Billing & Usage
+- description: "API key management — create, list, inspect, and revoke tiered keys.\
+    \ Requires ADMIN_API_KEY."
+  name: Admin
 paths:
   /v1/health:
     get:
@@ -1756,6 +1759,165 @@ paths:
       summary: Submit transaction(s) via Jito bundle
       tags:
       - Gas Abstraction
+  /v1/admin/keys:
+    get:
+      description: Returns all API keys (masked). Requires admin API key.
+      operationId: listAdminKeys
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listAdminKeys_200_response"
+          description: API keys listed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin key required
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin API not configured
+      security:
+      - ApiKeyAuth: []
+      summary: List all API keys
+      tags:
+      - Admin
+    post:
+      description: Creates a new tiered API key. The raw key is only shown once in
+        the response. Requires admin API key.
+      operationId: createAdminKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createAdminKey_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createAdminKey_201_response"
+          description: API key created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin key required
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new API key
+      tags:
+      - Admin
+  /v1/admin/keys/{id}:
+    delete:
+      description: Permanently revokes an API key. Requires admin API key.
+      operationId: revokeAdminKey
+      parameters:
+      - description: API key ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/revokeAdminKey_200_response"
+          description: Key revoked
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin key required
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Key not found
+      security:
+      - ApiKeyAuth: []
+      summary: Revoke an API key
+      tags:
+      - Admin
+    get:
+      description: Returns key details with masked key value and usage stats. Requires
+        admin API key.
+      operationId: getAdminKey
+      parameters:
+      - description: API key ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getAdminKey_200_response"
+          description: API key details
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin key required
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Key not found
+      security:
+      - ApiKeyAuth: []
+      summary: Get API key details
+      tags:
+      - Admin
+  /v1/admin/tiers:
+    get:
+      description: Returns all tier names and their associated rate/quota limits.
+        Requires admin API key.
+      operationId: listAdminTiers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listAdminTiers_200_response"
+          description: Tiers listed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Admin key required
+      security:
+      - ApiKeyAuth: []
+      summary: List available tiers and limits
+      tags:
+      - Admin
   /v1/billing/usage:
     get:
       description: Returns daily operation usage broken down by category for the current
@@ -3858,9 +4020,15 @@ components:
             proof: proof
             type: funding
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/proofsFundingGenerate_200_response_data"
     proofsFundingVerify_request:
@@ -3970,9 +4138,15 @@ components:
             proof: proof
             type: validity
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/proofsValidityGenerate_200_response_data"
     proofsValidityVerify_request:
@@ -4116,9 +4290,15 @@ components:
             proof: proof
             type: fulfillment
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/proofsFulfillmentGenerate_200_response_data"
     proofsRangeGenerate_request:
@@ -4853,9 +5033,15 @@ components:
           encryptedBalance: encryptedBalance
           token: "{}"
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/csplWrap_200_response_data"
     csplUnwrap_request:
@@ -4898,9 +5084,15 @@ components:
           amount: amount
           signature: signature
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/csplUnwrap_200_response_data"
     csplTransfer_request:
@@ -4956,9 +5148,15 @@ components:
           signature: signature
           recipientPendingUpdated: true
         success: true
+        warning: warning
+        beta: true
       properties:
         success:
           type: boolean
+        beta:
+          type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/csplTransfer_200_response_data"
     proofsFulfillmentVerify_request:
@@ -5117,12 +5315,15 @@ components:
           computationId: computationId
           status: submitted
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/getArciumComputationStatus_200_response_data"
     decryptArciumResult_request_viewingKey:
@@ -5172,12 +5373,15 @@ components:
           circuitId: circuitId
           computationId: computationId
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/decryptArciumResult_200_response_data"
     encryptIncoValue_request_plaintext:
@@ -5348,12 +5552,15 @@ components:
           operation: operation
           computationId: computationId
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/decryptIncoResult_200_response_data"
     privateSwap_request_recipientMetaAddress:
@@ -6040,12 +6247,15 @@ components:
           vote: "yes"
           proposalId: proposalId
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/encryptBallot_200_response_data"
     submitBallot_request:
@@ -6107,12 +6317,15 @@ components:
           totalBallots: 0
           proposalId: proposalId
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/submitBallot_200_response_data"
     tallyVotes_request:
@@ -6171,12 +6384,15 @@ components:
           noVotes: 1
           tallyBlinding: tallyBlinding
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/tallyVotes_200_response_data"
     getTally_200_response_data:
@@ -6230,12 +6446,15 @@ components:
           noVotes: 1
           tallyBlinding: tallyBlinding
         success: true
+        warning: warning
         beta: true
       properties:
         success:
           type: boolean
         beta:
           type: boolean
+        warning:
+          type: string
         data:
           $ref: "#/components/schemas/getTally_200_response_data"
     submitJitoBundle_request:
@@ -6313,6 +6532,203 @@ components:
           type: string
         data:
           $ref: "#/components/schemas/submitJitoBundle_200_response_data"
+    listAdminKeys_200_response_data:
+      example:
+        total: 0
+        keys:
+        - "{}"
+        - "{}"
+      properties:
+        keys:
+          items:
+            type: object
+          type: array
+        total:
+          type: integer
+    listAdminKeys_200_response:
+      example:
+        data:
+          total: 0
+          keys:
+          - "{}"
+          - "{}"
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listAdminKeys_200_response_data"
+    createAdminKey_request:
+      properties:
+        tier:
+          enum:
+          - free
+          - pro
+          - enterprise
+          type: string
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+        metadata:
+          additionalProperties: {}
+      required:
+      - name
+      - tier
+    createAdminKey_201_response_data:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        tier: tier
+        name: name
+        id: id
+        key: key
+        expiresAt: 2000-01-23T04:56:07.000+00:00
+        limits: "{}"
+        notice: notice
+      properties:
+        id:
+          type: string
+        key:
+          description: Raw API key — shown only once
+          type: string
+        tier:
+          type: string
+        name:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+        limits:
+          type: object
+        notice:
+          type: string
+    createAdminKey_201_response:
+      example:
+        data:
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          tier: tier
+          name: name
+          id: id
+          key: key
+          expiresAt: 2000-01-23T04:56:07.000+00:00
+          limits: "{}"
+          notice: notice
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/createAdminKey_201_response_data"
+    getAdminKey_200_response_data:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        tier: tier
+        usage: "{}"
+        name: name
+        id: id
+        revokedAt: 2000-01-23T04:56:07.000+00:00
+        key: key
+        expiresAt: 2000-01-23T04:56:07.000+00:00
+        limits: "{}"
+      properties:
+        id:
+          type: string
+        key:
+          description: Masked key (first 12 + last 4 chars)
+          type: string
+        tier:
+          type: string
+        name:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+        revokedAt:
+          format: date-time
+          type: string
+        limits:
+          type: object
+        usage:
+          type: object
+          nullable: true
+    getAdminKey_200_response:
+      example:
+        data:
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          tier: tier
+          usage: "{}"
+          name: name
+          id: id
+          revokedAt: 2000-01-23T04:56:07.000+00:00
+          key: key
+          expiresAt: 2000-01-23T04:56:07.000+00:00
+          limits: "{}"
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getAdminKey_200_response_data"
+    revokeAdminKey_200_response_data:
+      example:
+        revoked: true
+      properties:
+        revoked:
+          type: boolean
+    revokeAdminKey_200_response:
+      example:
+        data:
+          revoked: true
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/revokeAdminKey_200_response_data"
+    listAdminTiers_200_response_data_tiers_inner:
+      example:
+        tier: tier
+        limits: "{}"
+      properties:
+        tier:
+          type: string
+        limits:
+          type: object
+    listAdminTiers_200_response_data:
+      example:
+        tiers:
+        - tier: tier
+          limits: "{}"
+        - tier: tier
+          limits: "{}"
+      properties:
+        tiers:
+          items:
+            $ref: "#/components/schemas/listAdminTiers_200_response_data_tiers_inner"
+          type: array
+    listAdminTiers_200_response:
+      example:
+        data:
+          tiers:
+          - tier: tier
+            limits: "{}"
+          - tier: tier
+            limits: "{}"
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listAdminTiers_200_response_data"
     getBillingUsage_200_response_data_categories_value:
       example:
         quota: 5

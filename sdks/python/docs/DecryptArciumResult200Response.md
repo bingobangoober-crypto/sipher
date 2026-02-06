@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **bool** |  | [optional] 
 **beta** | **bool** |  | [optional] 
+**warning** | **str** |  | [optional] 
 **data** | [**DecryptArciumResult200ResponseData**](DecryptArciumResult200ResponseData.md) |  | [optional] 
 
 ## Example

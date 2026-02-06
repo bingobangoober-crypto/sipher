@@ -6,6 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Success** | Pointer to **bool** |  | [optional] 
 **Beta** | Pointer to **bool** |  | [optional] 
+**Warning** | Pointer to **string** |  | [optional] 
 **Data** | Pointer to [**SubmitBallot200ResponseData**](SubmitBallot200ResponseData.md) |  | [optional] 
 
 ## Methods
@@ -76,6 +77,31 @@ SetBeta sets Beta field to given value.
 `func (o *SubmitBallot200Response) HasBeta() bool`
 
 HasBeta returns a boolean if a field has been set.
+
+### GetWarning
+
+`func (o *SubmitBallot200Response) GetWarning() string`
+
+GetWarning returns the Warning field if non-nil, zero value otherwise.
+
+### GetWarningOk
+
+`func (o *SubmitBallot200Response) GetWarningOk() (*string, bool)`
+
+GetWarningOk returns a tuple with the Warning field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetWarning
+
+`func (o *SubmitBallot200Response) SetWarning(v string)`
+
+SetWarning sets Warning field to given value.
+
+### HasWarning
+
+`func (o *SubmitBallot200Response) HasWarning() bool`
+
+HasWarning returns a boolean if a field has been set.
 
 ### GetData
 

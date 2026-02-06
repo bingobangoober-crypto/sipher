@@ -41,6 +41,12 @@ export interface DecryptArciumResult200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof DecryptArciumResult200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {DecryptArciumResult200ResponseData}
      * @memberof DecryptArciumResult200Response
      */
@@ -66,6 +72,7 @@ export function DecryptArciumResult200ResponseFromJSONTyped(json: any, ignoreDis
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : DecryptArciumResult200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function DecryptArciumResult200ResponseToJSONTyped(value?: DecryptArciumR
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': DecryptArciumResult200ResponseDataToJSON(value['data']),
     };
 }

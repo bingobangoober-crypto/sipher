@@ -8,6 +8,7 @@ Name | Type
 ------------ | -------------
 `success` | boolean
 `beta` | boolean
+`warning` | string
 `data` | [DecryptArciumResult200ResponseData](DecryptArciumResult200ResponseData.md)
 
 ## Example
@@ -19,6 +20,7 @@ import type { DecryptArciumResult200Response } from '@sip-protocol/sipher-client
 const example = {
   "success": null,
   "beta": null,
+  "warning": null,
   "data": null,
 } satisfies DecryptArciumResult200Response
 

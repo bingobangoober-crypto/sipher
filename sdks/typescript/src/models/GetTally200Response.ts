@@ -41,6 +41,12 @@ export interface GetTally200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof GetTally200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {GetTally200ResponseData}
      * @memberof GetTally200Response
      */
@@ -66,6 +72,7 @@ export function GetTally200ResponseFromJSONTyped(json: any, ignoreDiscriminator:
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : GetTally200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function GetTally200ResponseToJSONTyped(value?: GetTally200Response | nul
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': GetTally200ResponseDataToJSON(value['data']),
     };
 }

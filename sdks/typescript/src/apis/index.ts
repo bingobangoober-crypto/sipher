@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './AdminApi';
 export * from './ArciumApi';
 export * from './BackendsApi';
 export * from './BillingUsageApi';

@@ -8,6 +8,7 @@ Name | Type
 ------------ | -------------
 `success` | boolean
 `beta` | boolean
+`warning` | string
 `data` | [DecryptIncoResult200ResponseData](DecryptIncoResult200ResponseData.md)
 
 ## Example
@@ -19,6 +20,7 @@ import type { DecryptIncoResult200Response } from '@sip-protocol/sipher-client'
 const example = {
   "success": null,
   "beta": null,
+  "warning": null,
   "data": null,
 } satisfies DecryptIncoResult200Response
 

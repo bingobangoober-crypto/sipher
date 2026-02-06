@@ -41,6 +41,12 @@ export interface EncryptBallot200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof EncryptBallot200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {EncryptBallot200ResponseData}
      * @memberof EncryptBallot200Response
      */
@@ -66,6 +72,7 @@ export function EncryptBallot200ResponseFromJSONTyped(json: any, ignoreDiscrimin
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : EncryptBallot200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function EncryptBallot200ResponseToJSONTyped(value?: EncryptBallot200Resp
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': EncryptBallot200ResponseDataToJSON(value['data']),
     };
 }

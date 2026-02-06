@@ -7,6 +7,8 @@
 Name | Type
 ------------ | -------------
 `success` | boolean
+`beta` | boolean
+`warning` | string
 `data` | [CsplTransfer200ResponseData](CsplTransfer200ResponseData.md)
 
 ## Example
@@ -17,6 +19,8 @@ import type { CsplTransfer200Response } from '@sip-protocol/sipher-client'
 // TODO: Update the object below with actual values
 const example = {
   "success": null,
+  "beta": null,
+  "warning": null,
   "data": null,
 } satisfies CsplTransfer200Response
 

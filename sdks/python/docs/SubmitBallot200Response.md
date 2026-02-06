@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **bool** |  | [optional] 
 **beta** | **bool** |  | [optional] 
+**warning** | **str** |  | [optional] 
 **data** | [**SubmitBallot200ResponseData**](SubmitBallot200ResponseData.md) |  | [optional] 
 
 ## Example

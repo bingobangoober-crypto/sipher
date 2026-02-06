@@ -1,6 +1,7 @@
 # flake8: noqa
 
 # import apis into api package
+from sipher_client.api.admin_api import AdminApi
 from sipher_client.api.arcium_api import ArciumApi
 from sipher_client.api.backends_api import BackendsApi
 from sipher_client.api.billing_usage_api import BillingUsageApi

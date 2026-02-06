@@ -7,6 +7,8 @@
 Name | Type
 ------------ | -------------
 `success` | boolean
+`beta` | boolean
+`warning` | string
 `data` | [ProofsValidityGenerate200ResponseData](ProofsValidityGenerate200ResponseData.md)
 
 ## Example
@@ -17,6 +19,8 @@ import type { ProofsValidityGenerate200Response } from '@sip-protocol/sipher-cli
 // TODO: Update the object below with actual values
 const example = {
   "success": null,
+  "beta": null,
+  "warning": null,
   "data": null,
 } satisfies ProofsValidityGenerate200Response
 

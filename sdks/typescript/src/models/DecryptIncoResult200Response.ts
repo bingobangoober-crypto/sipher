@@ -41,6 +41,12 @@ export interface DecryptIncoResult200Response {
     beta?: boolean;
     /**
      * 
+     * @type {string}
+     * @memberof DecryptIncoResult200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {DecryptIncoResult200ResponseData}
      * @memberof DecryptIncoResult200Response
      */
@@ -66,6 +72,7 @@ export function DecryptIncoResult200ResponseFromJSONTyped(json: any, ignoreDiscr
         
         'success': json['success'] == null ? undefined : json['success'],
         'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : DecryptIncoResult200ResponseDataFromJSON(json['data']),
     };
 }
@@ -83,6 +90,7 @@ export function DecryptIncoResult200ResponseToJSONTyped(value?: DecryptIncoResul
         
         'success': value['success'],
         'beta': value['beta'],
+        'warning': value['warning'],
         'data': DecryptIncoResult200ResponseDataToJSON(value['data']),
     };
 }

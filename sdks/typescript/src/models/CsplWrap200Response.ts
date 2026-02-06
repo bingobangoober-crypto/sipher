@@ -35,6 +35,18 @@ export interface CsplWrap200Response {
     success?: boolean;
     /**
      * 
+     * @type {boolean}
+     * @memberof CsplWrap200Response
+     */
+    beta?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof CsplWrap200Response
+     */
+    warning?: string;
+    /**
+     * 
      * @type {CsplWrap200ResponseData}
      * @memberof CsplWrap200Response
      */
@@ -59,6 +71,8 @@ export function CsplWrap200ResponseFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'success': json['success'] == null ? undefined : json['success'],
+        'beta': json['beta'] == null ? undefined : json['beta'],
+        'warning': json['warning'] == null ? undefined : json['warning'],
         'data': json['data'] == null ? undefined : CsplWrap200ResponseDataFromJSON(json['data']),
     };
 }
@@ -75,6 +89,8 @@ export function CsplWrap200ResponseToJSONTyped(value?: CsplWrap200Response | nul
     return {
         
         'success': value['success'],
+        'beta': value['beta'],
+        'warning': value['warning'],
         'data': CsplWrap200ResponseDataToJSON(value['data']),
     };
 }

@@ -8,6 +8,7 @@ Name | Type
 ------------ | -------------
 `success` | boolean
 `beta` | boolean
+`warning` | string
 `data` | [GetArciumComputationStatus200ResponseData](GetArciumComputationStatus200ResponseData.md)
 
 ## Example
@@ -19,6 +20,7 @@ import type { GetArciumComputationStatus200Response } from '@sip-protocol/sipher
 const example = {
   "success": null,
   "beta": null,
+  "warning": null,
   "data": null,
 } satisfies GetArciumComputationStatus200Response
 

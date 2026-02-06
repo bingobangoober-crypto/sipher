@@ -6,6 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **bool** |  | [optional] 
+**beta** | **bool** |  | [optional] 
+**warning** | **str** |  | [optional] 
 **data** | [**ProofsFulfillmentGenerate200ResponseData**](ProofsFulfillmentGenerate200ResponseData.md) |  | [optional] 
 
 ## Example
