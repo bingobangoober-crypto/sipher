@@ -12,13 +12,10 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
+#[serde(untagged)]
 pub enum TransferPrivate200ResponseDataChainData {
-    #[serde(rename="SolanaTransferData")]
     SolanaTransferData(Box<models::SolanaTransferData>),
-    #[serde(rename="EvmTransferData")]
     EvmTransferData(Box<models::EvmTransferData>),
-    #[serde(rename="NearTransferData")]
     NearTransferData(Box<models::NearTransferData>),
 }
 
@@ -27,5 +24,20 @@ impl Default for TransferPrivate200ResponseDataChainData {
         Self::SolanaTransferData(Default::default())
     }
 }
+/// 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum Type {
+    #[serde(rename = "solana")]
+    Solana,
+    #[serde(rename = "evm")]
+    Evm,
+    #[serde(rename = "near")]
+    Near,
+}
 
+impl Default for Type {
+    fn default() -> Type {
+        Self::Solana
+    }
+}
 

@@ -51,9 +51,15 @@ tags:
 - description: Privacy-preserving token swaps via Jupiter DEX with stealth address
     routing
   name: Swap
+- description: "Agent session management — configure default parameters (chain, backend,\
+    \ privacy level) applied to all requests"
+  name: Sessions
 - description: "Enterprise compliance endpoints — selective disclosure, audit reports,\
     \ and auditor verification"
   name: Compliance
+- description: "Privacy-preserving governance — encrypted ballots via Pedersen commitments,\
+    \ nullifier-based double-vote prevention, and homomorphic vote tallying"
+  name: Governance
 paths:
   /v1/health:
     get:
@@ -1390,7 +1396,340 @@ paths:
       summary: Retrieve generated compliance report (enterprise)
       tags:
       - Compliance
+  /v1/sessions:
+    post:
+      description: "Creates a session that stores default parameters (chain, backend,\
+        \ privacy level, etc.) applied to all subsequent requests via the X-Session-Id\
+        \ header. Requires pro or enterprise tier."
+      operationId: createSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createSession_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createSession_201_response"
+          description: Session created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid request body
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tier access denied (pro+ required)
+      summary: Create agent session with default parameters (pro+)
+      tags:
+      - Sessions
+  /v1/sessions/{id}:
+    delete:
+      description: Ends and deletes the session. The session ID will no longer be
+        valid for subsequent requests.
+      operationId: deleteSession
+      parameters:
+      - description: Session ID returned from POST /v1/sessions
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^sess_[0-9a-f]{64}$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/deleteSession_200_response"
+          description: Session deleted
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid session ID format
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tier access denied (pro+ required)
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Session not found
+      summary: Delete session (pro+)
+      tags:
+      - Sessions
+    get:
+      description: Retrieves session details including defaults and expiry. Only the
+        session owner (same API key) can access it.
+      operationId: getSession
+      parameters:
+      - description: Session ID returned from POST /v1/sessions
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^sess_[0-9a-f]{64}$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getSession_200_response"
+          description: Session found
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid session ID format
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tier access denied (pro+ required)
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Session not found
+      summary: Get session configuration (pro+)
+      tags:
+      - Sessions
+    patch:
+      description: Merges new defaults into the existing session. Only provided keys
+        are updated; omitted keys remain unchanged.
+      operationId: updateSession
+      parameters:
+      - description: Session ID returned from POST /v1/sessions
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^sess_[0-9a-f]{64}$"
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateSession_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/updateSession_200_response"
+          description: Session updated
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid request body or session ID
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tier access denied (pro+ required)
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Session not found
+      summary: Update session defaults (pro+)
+      tags:
+      - Sessions
+  /v1/governance/ballot/encrypt:
+    post:
+      description: Creates a Pedersen commitment for a vote (yes/no/abstain) and generates
+        a deterministic nullifier from the voter secret + proposal ID. The nullifier
+        prevents double-voting without revealing voter identity.
+      operationId: encryptBallot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/encryptBallot_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/encryptBallot_200_response"
+          description: Encrypted ballot with commitment and nullifier
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error
+      summary: Encrypt a vote ballot
+      tags:
+      - Governance
+  /v1/governance/ballot/submit:
+    post:
+      description: Submits an encrypted ballot (commitment + nullifier) to a proposal.
+        The nullifier is checked for uniqueness — duplicate votes are rejected with
+        409. Proposals are created lazily on first ballot submission.
+      operationId: submitBallot
+      parameters:
+      - description: UUID v4 for idempotent submission
+        explode: false
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/submitBallot_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/submitBallot_200_response"
+          description: Ballot accepted
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Double vote detected (nullifier already used)
+      summary: Submit encrypted ballot to a proposal
+      tags:
+      - Governance
+  /v1/governance/tally:
+    post:
+      description: Performs homomorphic addition of all ballot commitments for a proposal.
+        The tally commitment can be verified against the total yes-vote count using
+        the combined blinding factor. Returns a verification hash as proof of correct
+        tallying.
+      operationId: tallyVotes
+      parameters:
+      - description: UUID v4 for idempotent tally
+        explode: false
+        in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/tallyVotes_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/tallyVotes_200_response"
+          description: Tally result with verification proof
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Validation error
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Proposal not found
+      summary: Tally votes for a proposal
+      tags:
+      - Governance
+  /v1/governance/tally/{id}:
+    get:
+      description: "Retrieves a previously computed tally result by its ID. Includes\
+        \ vote counts, the homomorphic tally commitment, and the verification proof."
+      operationId: getTally
+      parameters:
+      - description: Tally ID returned from POST /v1/governance/tally
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          pattern: "^tly_[0-9a-f]{64}$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getTally_200_response"
+          description: Tally result
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Invalid tally ID format
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getHealth_503_response"
+          description: Tally not found
+      summary: Get tally result
+      tags:
+      - Governance
 components:
+  parameters:
+    SessionId:
+      description: "Session ID to apply stored defaults (chain, backend, privacy level)\
+        \ to this request. Obtain via POST /v1/sessions."
+      explode: false
+      in: header
+      name: X-Session-Id
+      required: false
+      schema:
+        pattern: "^sess_[0-9a-f]{64}$"
+        type: string
+      style: simple
   schemas:
     ErrorResponse:
       properties:
@@ -2202,8 +2541,6 @@ components:
       - type
       title: NearTransferData
     transferPrivate_200_response_data_chainData:
-      discriminator:
-        propertyName: type
       oneOf:
       - $ref: "#/components/schemas/SolanaTransferData"
       - $ref: "#/components/schemas/EvmTransferData"
@@ -5244,6 +5581,439 @@ components:
           type: boolean
         data:
           $ref: "#/components/schemas/getComplianceReport_200_response_data"
+    createSession_request_defaults:
+      properties:
+        chain:
+          enum:
+          - solana
+          - ethereum
+          - polygon
+          - arbitrum
+          - optimism
+          - base
+          - near
+          - aptos
+          - sui
+          - cosmos
+          - osmosis
+          - injective
+          - celestia
+          - sei
+          - dydx
+          - bitcoin
+          - zcash
+          type: string
+        privacyLevel:
+          enum:
+          - standard
+          - shielded
+          - maximum
+          type: string
+        rpcProvider:
+          enum:
+          - helius
+          - quicknode
+          - triton
+          - generic
+          type: string
+        backend:
+          enum:
+          - sip-native
+          - arcium
+          - inco
+          type: string
+        defaultViewingKey:
+          pattern: "^0x[0-9a-fA-F]+$"
+          type: string
+    createSession_request:
+      properties:
+        defaults:
+          $ref: "#/components/schemas/createSession_request_defaults"
+        ttlSeconds:
+          description: "Session TTL in seconds (default: 3600, max: 86400)"
+          maximum: 86400
+          minimum: 60
+          type: integer
+      required:
+      - defaults
+    createSession_201_response_data:
+      example:
+        createdAt: 0
+        defaults: "{}"
+        sessionId: sessionId
+        expiresAt: 6
+      properties:
+        sessionId:
+          pattern: "^sess_[0-9a-f]{64}$"
+          type: string
+        defaults:
+          type: object
+        createdAt:
+          type: integer
+        expiresAt:
+          type: integer
+    createSession_201_response:
+      example:
+        data:
+          createdAt: 0
+          defaults: "{}"
+          sessionId: sessionId
+          expiresAt: 6
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/createSession_201_response_data"
+    getSession_200_response_data:
+      example:
+        lastAccessedAt: 1
+        createdAt: 0
+        defaults: "{}"
+        sessionId: sessionId
+        expiresAt: 6
+      properties:
+        sessionId:
+          type: string
+        defaults:
+          type: object
+        createdAt:
+          type: integer
+        expiresAt:
+          type: integer
+        lastAccessedAt:
+          type: integer
+    getSession_200_response:
+      example:
+        data:
+          lastAccessedAt: 1
+          createdAt: 0
+          defaults: "{}"
+          sessionId: sessionId
+          expiresAt: 6
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getSession_200_response_data"
+    deleteSession_200_response_data:
+      example:
+        deleted: true
+        sessionId: sessionId
+      properties:
+        sessionId:
+          type: string
+        deleted:
+          type: boolean
+    deleteSession_200_response:
+      example:
+        data:
+          deleted: true
+          sessionId: sessionId
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/deleteSession_200_response_data"
+    updateSession_request:
+      properties:
+        defaults:
+          $ref: "#/components/schemas/createSession_request_defaults"
+      required:
+      - defaults
+    updateSession_200_response_data:
+      example:
+        lastAccessedAt: 6
+        defaults: "{}"
+        sessionId: sessionId
+        expiresAt: 0
+      properties:
+        sessionId:
+          type: string
+        defaults:
+          type: object
+        expiresAt:
+          type: integer
+        lastAccessedAt:
+          type: integer
+    updateSession_200_response:
+      example:
+        data:
+          lastAccessedAt: 6
+          defaults: "{}"
+          sessionId: sessionId
+          expiresAt: 0
+        success: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/updateSession_200_response_data"
+    encryptBallot_request:
+      properties:
+        proposalId:
+          description: Unique proposal identifier
+          maxLength: 128
+          minLength: 1
+          type: string
+        vote:
+          description: Vote choice
+          enum:
+          - "yes"
+          - "no"
+          - abstain
+          type: string
+        voterSecret:
+          description: Private entropy for nullifier derivation (never stored)
+          example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          pattern: "^0x[0-9a-fA-F]{64}$"
+          type: string
+        stealthAddress:
+          description: Optional stealth address for voter anonymity (from /stealth/derive)
+          type: string
+      required:
+      - proposalId
+      - vote
+      - voterSecret
+    encryptBallot_200_response_data:
+      example:
+        blindingFactor: blindingFactor
+        anonymousId: anonymousId
+        nullifier: nullifier
+        commitment: commitment
+        vote: "yes"
+        proposalId: proposalId
+      properties:
+        commitment:
+          description: Pedersen commitment to the vote value
+          type: string
+        blindingFactor:
+          description: Blinding factor for the commitment
+          type: string
+        nullifier:
+          description: Deterministic nullifier (prevents double-voting)
+          type: string
+        vote:
+          enum:
+          - "yes"
+          - "no"
+          - abstain
+          type: string
+        proposalId:
+          type: string
+        anonymousId:
+          description: Anonymous voter identifier (stealth address or hash)
+          type: string
+    encryptBallot_200_response:
+      example:
+        data:
+          blindingFactor: blindingFactor
+          anonymousId: anonymousId
+          nullifier: nullifier
+          commitment: commitment
+          vote: "yes"
+          proposalId: proposalId
+        success: true
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/encryptBallot_200_response_data"
+    submitBallot_request:
+      properties:
+        proposalId:
+          maxLength: 128
+          minLength: 1
+          type: string
+        commitment:
+          description: 0x-prefixed 32-byte hex string
+          example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          pattern: "^0x[0-9a-fA-F]{64}$"
+          type: string
+        blindingFactor:
+          description: 0x-prefixed 32-byte hex string
+          example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          pattern: "^0x[0-9a-fA-F]{64}$"
+          type: string
+        nullifier:
+          description: 0x-prefixed 32-byte hex string
+          example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          pattern: "^0x[0-9a-fA-F]{64}$"
+          type: string
+        vote:
+          enum:
+          - "yes"
+          - "no"
+          - abstain
+          type: string
+        stealthAddress:
+          description: Optional stealth address for voter anonymity
+          type: string
+      required:
+      - blindingFactor
+      - commitment
+      - nullifier
+      - proposalId
+      - vote
+    submitBallot_200_response_data:
+      example:
+        nullifier: nullifier
+        accepted: true
+        totalBallots: 0
+        proposalId: proposalId
+      properties:
+        proposalId:
+          type: string
+        nullifier:
+          type: string
+        accepted:
+          type: boolean
+        totalBallots:
+          type: integer
+    submitBallot_200_response:
+      example:
+        data:
+          nullifier: nullifier
+          accepted: true
+          totalBallots: 0
+          proposalId: proposalId
+        success: true
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/submitBallot_200_response_data"
+    tallyVotes_request:
+      properties:
+        proposalId:
+          maxLength: 128
+          minLength: 1
+          type: string
+      required:
+      - proposalId
+    tallyVotes_200_response_data:
+      example:
+        verificationHash: verificationHash
+        yesVotes: 6
+        abstainVotes: 5
+        tallyCommitment: tallyCommitment
+        totalVotes: 0
+        verified: true
+        tallyId: tallyId
+        proposalId: proposalId
+        noVotes: 1
+        tallyBlinding: tallyBlinding
+      properties:
+        tallyId:
+          pattern: "^tly_[0-9a-f]{64}$"
+          type: string
+        proposalId:
+          type: string
+        totalVotes:
+          type: integer
+        yesVotes:
+          type: integer
+        noVotes:
+          type: integer
+        abstainVotes:
+          type: integer
+        tallyCommitment:
+          type: string
+        tallyBlinding:
+          type: string
+        verificationHash:
+          type: string
+        verified:
+          type: boolean
+    tallyVotes_200_response:
+      example:
+        data:
+          verificationHash: verificationHash
+          yesVotes: 6
+          abstainVotes: 5
+          tallyCommitment: tallyCommitment
+          totalVotes: 0
+          verified: true
+          tallyId: tallyId
+          proposalId: proposalId
+          noVotes: 1
+          tallyBlinding: tallyBlinding
+        success: true
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/tallyVotes_200_response_data"
+    getTally_200_response_data:
+      example:
+        verificationHash: verificationHash
+        yesVotes: 6
+        abstainVotes: 5
+        tallyCommitment: tallyCommitment
+        totalVotes: 0
+        verified: true
+        talliedAt: 5
+        tallyId: tallyId
+        proposalId: proposalId
+        noVotes: 1
+        tallyBlinding: tallyBlinding
+      properties:
+        tallyId:
+          type: string
+        proposalId:
+          type: string
+        totalVotes:
+          type: integer
+        yesVotes:
+          type: integer
+        noVotes:
+          type: integer
+        abstainVotes:
+          type: integer
+        tallyCommitment:
+          type: string
+        tallyBlinding:
+          type: string
+        verificationHash:
+          type: string
+        verified:
+          type: boolean
+        talliedAt:
+          type: integer
+    getTally_200_response:
+      example:
+        data:
+          verificationHash: verificationHash
+          yesVotes: 6
+          abstainVotes: 5
+          tallyCommitment: tallyCommitment
+          totalVotes: 0
+          verified: true
+          talliedAt: 5
+          tallyId: tallyId
+          proposalId: proposalId
+          noVotes: 1
+          tallyBlinding: tallyBlinding
+        success: true
+        beta: true
+      properties:
+        success:
+          type: boolean
+        beta:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getTally_200_response_data"
   securitySchemes:
     ApiKeyAuth:
       description: "API key for authentication. Also accepts Authorization: Bearer\

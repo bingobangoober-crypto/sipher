@@ -60,6 +60,8 @@ type APIClient struct {
 
 	ComplianceAPI *ComplianceAPIService
 
+	GovernanceAPI *GovernanceAPIService
+
 	HealthAPI *HealthAPIService
 
 	IncoAPI *IncoAPIService
@@ -71,6 +73,8 @@ type APIClient struct {
 	RPCAPI *RPCAPIService
 
 	ScanAPI *ScanAPIService
+
+	SessionsAPI *SessionsAPIService
 
 	StealthAPI *StealthAPIService
 
@@ -102,12 +106,14 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.CSPLAPI = (*CSPLAPIService)(&c.common)
 	c.CommitmentAPI = (*CommitmentAPIService)(&c.common)
 	c.ComplianceAPI = (*ComplianceAPIService)(&c.common)
+	c.GovernanceAPI = (*GovernanceAPIService)(&c.common)
 	c.HealthAPI = (*HealthAPIService)(&c.common)
 	c.IncoAPI = (*IncoAPIService)(&c.common)
 	c.PrivacyAPI = (*PrivacyAPIService)(&c.common)
 	c.ProofsAPI = (*ProofsAPIService)(&c.common)
 	c.RPCAPI = (*RPCAPIService)(&c.common)
 	c.ScanAPI = (*ScanAPIService)(&c.common)
+	c.SessionsAPI = (*SessionsAPIService)(&c.common)
 	c.StealthAPI = (*StealthAPIService)(&c.common)
 	c.SwapAPI = (*SwapAPIService)(&c.common)
 	c.TransferAPI = (*TransferAPIService)(&c.common)

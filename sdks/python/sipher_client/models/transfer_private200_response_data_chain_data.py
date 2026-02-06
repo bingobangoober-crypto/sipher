@@ -46,9 +46,6 @@ class TransferPrivate200ResponseDataChainData(BaseModel):
     )
 
 
-    discriminator_value_class_map: Dict[str, str] = {
-    }
-
     def __init__(self, *args, **kwargs) -> None:
         if args:
             if len(args) > 1:

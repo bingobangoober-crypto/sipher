@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .travis.yml
 Cargo.toml
 README.md
@@ -51,6 +50,10 @@ docs/ComplianceReportRequest.md
 docs/ComputeIncoCiphertexts200Response.md
 docs/ComputeIncoCiphertexts200ResponseData.md
 docs/ComputeIncoCiphertextsRequest.md
+docs/CreateSession201Response.md
+docs/CreateSession201ResponseData.md
+docs/CreateSessionRequest.md
+docs/CreateSessionRequestDefaults.md
 docs/CsplApi.md
 docs/CsplTransfer200Response.md
 docs/CsplTransfer200ResponseData.md
@@ -68,6 +71,11 @@ docs/DecryptArciumResultRequestViewingKey.md
 docs/DecryptIncoResult200Response.md
 docs/DecryptIncoResult200ResponseData.md
 docs/DecryptIncoResultRequest.md
+docs/DeleteSession200Response.md
+docs/DeleteSession200ResponseData.md
+docs/EncryptBallot200Response.md
+docs/EncryptBallot200ResponseData.md
+docs/EncryptBallotRequest.md
 docs/EncryptIncoValue200Response.md
 docs/EncryptIncoValue200ResponseData.md
 docs/EncryptIncoValueRequest.md
@@ -94,6 +102,11 @@ docs/GetRpcProviders200Response.md
 docs/GetRpcProviders200ResponseData.md
 docs/GetRpcProviders200ResponseDataActive.md
 docs/GetRpcProviders200ResponseDataSupportedInner.md
+docs/GetSession200Response.md
+docs/GetSession200ResponseData.md
+docs/GetTally200Response.md
+docs/GetTally200ResponseData.md
+docs/GovernanceApi.md
 docs/HealthApi.md
 docs/IncoApi.md
 docs/NearTransferData.md
@@ -145,6 +158,7 @@ docs/ScanPaymentsBatch200ResponseDataSummary.md
 docs/ScanPaymentsBatchRequest.md
 docs/ScanPaymentsBatchRequestKeyPairsInner.md
 docs/ScanPaymentsRequest.md
+docs/SessionsApi.md
 docs/SolanaTransferData.md
 docs/StealthAddress.md
 docs/StealthApi.md
@@ -167,7 +181,13 @@ docs/SubmitArciumComputation200Response.md
 docs/SubmitArciumComputation200ResponseData.md
 docs/SubmitArciumComputationRequest.md
 docs/SubmitArciumComputationRequestViewingKey.md
+docs/SubmitBallot200Response.md
+docs/SubmitBallot200ResponseData.md
+docs/SubmitBallotRequest.md
 docs/SwapApi.md
+docs/TallyVotes200Response.md
+docs/TallyVotes200ResponseData.md
+docs/TallyVotesRequest.md
 docs/TransferApi.md
 docs/TransferClaim200Response.md
 docs/TransferClaim200ResponseData.md
@@ -182,6 +202,9 @@ docs/TransferPrivateRequestRecipientMetaAddress.md
 docs/TransferShield200Response.md
 docs/TransferShield200ResponseData.md
 docs/TransferShieldRequest.md
+docs/UpdateSession200Response.md
+docs/UpdateSession200ResponseData.md
+docs/UpdateSessionRequest.md
 docs/ViewingKey.md
 docs/ViewingKeyApi.md
 docs/ViewingKeyDecrypt200Response.md
@@ -208,6 +231,7 @@ src/apis/commitment_api.rs
 src/apis/compliance_api.rs
 src/apis/configuration.rs
 src/apis/cspl_api.rs
+src/apis/governance_api.rs
 src/apis/health_api.rs
 src/apis/inco_api.rs
 src/apis/mod.rs
@@ -215,6 +239,7 @@ src/apis/privacy_api.rs
 src/apis/proofs_api.rs
 src/apis/rpc_api.rs
 src/apis/scan_api.rs
+src/apis/sessions_api.rs
 src/apis/stealth_api.rs
 src/apis/swap_api.rs
 src/apis/transfer_api.rs
@@ -264,6 +289,10 @@ src/models/compliance_report_request.rs
 src/models/compute_inco_ciphertexts_200_response.rs
 src/models/compute_inco_ciphertexts_200_response_data.rs
 src/models/compute_inco_ciphertexts_request.rs
+src/models/create_session_201_response.rs
+src/models/create_session_201_response_data.rs
+src/models/create_session_request.rs
+src/models/create_session_request_defaults.rs
 src/models/cspl_transfer_200_response.rs
 src/models/cspl_transfer_200_response_data.rs
 src/models/cspl_transfer_request.rs
@@ -280,6 +309,11 @@ src/models/decrypt_arcium_result_request_viewing_key.rs
 src/models/decrypt_inco_result_200_response.rs
 src/models/decrypt_inco_result_200_response_data.rs
 src/models/decrypt_inco_result_request.rs
+src/models/delete_session_200_response.rs
+src/models/delete_session_200_response_data.rs
+src/models/encrypt_ballot_200_response.rs
+src/models/encrypt_ballot_200_response_data.rs
+src/models/encrypt_ballot_request.rs
 src/models/encrypt_inco_value_200_response.rs
 src/models/encrypt_inco_value_200_response_data.rs
 src/models/encrypt_inco_value_request.rs
@@ -306,6 +340,10 @@ src/models/get_rpc_providers_200_response.rs
 src/models/get_rpc_providers_200_response_data.rs
 src/models/get_rpc_providers_200_response_data_active.rs
 src/models/get_rpc_providers_200_response_data_supported_inner.rs
+src/models/get_session_200_response.rs
+src/models/get_session_200_response_data.rs
+src/models/get_tally_200_response.rs
+src/models/get_tally_200_response_data.rs
 src/models/mod.rs
 src/models/near_transfer_data.rs
 src/models/near_transfer_data_actions_inner.rs
@@ -373,6 +411,12 @@ src/models/submit_arcium_computation_200_response.rs
 src/models/submit_arcium_computation_200_response_data.rs
 src/models/submit_arcium_computation_request.rs
 src/models/submit_arcium_computation_request_viewing_key.rs
+src/models/submit_ballot_200_response.rs
+src/models/submit_ballot_200_response_data.rs
+src/models/submit_ballot_request.rs
+src/models/tally_votes_200_response.rs
+src/models/tally_votes_200_response_data.rs
+src/models/tally_votes_request.rs
 src/models/transfer_claim_200_response.rs
 src/models/transfer_claim_200_response_data.rs
 src/models/transfer_claim_request.rs
@@ -386,6 +430,9 @@ src/models/transfer_private_request_recipient_meta_address.rs
 src/models/transfer_shield_200_response.rs
 src/models/transfer_shield_200_response_data.rs
 src/models/transfer_shield_request.rs
+src/models/update_session_200_response.rs
+src/models/update_session_200_response_data.rs
+src/models/update_session_request.rs
 src/models/viewing_key.rs
 src/models/viewing_key_decrypt_200_response.rs
 src/models/viewing_key_decrypt_200_response_data.rs

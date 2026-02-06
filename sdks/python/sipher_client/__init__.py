@@ -24,12 +24,14 @@ __all__ = [
     "CSPLApi",
     "CommitmentApi",
     "ComplianceApi",
+    "GovernanceApi",
     "HealthApi",
     "IncoApi",
     "PrivacyApi",
     "ProofsApi",
     "RPCApi",
     "ScanApi",
+    "SessionsApi",
     "StealthApi",
     "SwapApi",
     "TransferApi",
@@ -87,6 +89,10 @@ __all__ = [
     "ComputeIncoCiphertexts200Response",
     "ComputeIncoCiphertexts200ResponseData",
     "ComputeIncoCiphertextsRequest",
+    "CreateSession201Response",
+    "CreateSession201ResponseData",
+    "CreateSessionRequest",
+    "CreateSessionRequestDefaults",
     "CsplTransfer200Response",
     "CsplTransfer200ResponseData",
     "CsplTransferRequest",
@@ -103,6 +109,11 @@ __all__ = [
     "DecryptIncoResult200Response",
     "DecryptIncoResult200ResponseData",
     "DecryptIncoResultRequest",
+    "DeleteSession200Response",
+    "DeleteSession200ResponseData",
+    "EncryptBallot200Response",
+    "EncryptBallot200ResponseData",
+    "EncryptBallotRequest",
     "EncryptIncoValue200Response",
     "EncryptIncoValue200ResponseData",
     "EncryptIncoValueRequest",
@@ -129,6 +140,10 @@ __all__ = [
     "GetRpcProviders200ResponseData",
     "GetRpcProviders200ResponseDataActive",
     "GetRpcProviders200ResponseDataSupportedInner",
+    "GetSession200Response",
+    "GetSession200ResponseData",
+    "GetTally200Response",
+    "GetTally200ResponseData",
     "NearTransferData",
     "NearTransferDataActionsInner",
     "PrivacyScore200Response",
@@ -195,6 +210,12 @@ __all__ = [
     "SubmitArciumComputation200ResponseData",
     "SubmitArciumComputationRequest",
     "SubmitArciumComputationRequestViewingKey",
+    "SubmitBallot200Response",
+    "SubmitBallot200ResponseData",
+    "SubmitBallotRequest",
+    "TallyVotes200Response",
+    "TallyVotes200ResponseData",
+    "TallyVotesRequest",
     "TransferClaim200Response",
     "TransferClaim200ResponseData",
     "TransferClaimRequest",
@@ -208,6 +229,9 @@ __all__ = [
     "TransferShield200Response",
     "TransferShield200ResponseData",
     "TransferShieldRequest",
+    "UpdateSession200Response",
+    "UpdateSession200ResponseData",
+    "UpdateSessionRequest",
     "ViewingKey",
     "ViewingKeyDecrypt200Response",
     "ViewingKeyDecrypt200ResponseData",
@@ -234,12 +258,14 @@ from sipher_client.api.backends_api import BackendsApi as BackendsApi
 from sipher_client.api.cspl_api import CSPLApi as CSPLApi
 from sipher_client.api.commitment_api import CommitmentApi as CommitmentApi
 from sipher_client.api.compliance_api import ComplianceApi as ComplianceApi
+from sipher_client.api.governance_api import GovernanceApi as GovernanceApi
 from sipher_client.api.health_api import HealthApi as HealthApi
 from sipher_client.api.inco_api import IncoApi as IncoApi
 from sipher_client.api.privacy_api import PrivacyApi as PrivacyApi
 from sipher_client.api.proofs_api import ProofsApi as ProofsApi
 from sipher_client.api.rpc_api import RPCApi as RPCApi
 from sipher_client.api.scan_api import ScanApi as ScanApi
+from sipher_client.api.sessions_api import SessionsApi as SessionsApi
 from sipher_client.api.stealth_api import StealthApi as StealthApi
 from sipher_client.api.swap_api import SwapApi as SwapApi
 from sipher_client.api.transfer_api import TransferApi as TransferApi
@@ -301,6 +327,10 @@ from sipher_client.models.compliance_report_request import ComplianceReportReque
 from sipher_client.models.compute_inco_ciphertexts200_response import ComputeIncoCiphertexts200Response as ComputeIncoCiphertexts200Response
 from sipher_client.models.compute_inco_ciphertexts200_response_data import ComputeIncoCiphertexts200ResponseData as ComputeIncoCiphertexts200ResponseData
 from sipher_client.models.compute_inco_ciphertexts_request import ComputeIncoCiphertextsRequest as ComputeIncoCiphertextsRequest
+from sipher_client.models.create_session201_response import CreateSession201Response as CreateSession201Response
+from sipher_client.models.create_session201_response_data import CreateSession201ResponseData as CreateSession201ResponseData
+from sipher_client.models.create_session_request import CreateSessionRequest as CreateSessionRequest
+from sipher_client.models.create_session_request_defaults import CreateSessionRequestDefaults as CreateSessionRequestDefaults
 from sipher_client.models.cspl_transfer200_response import CsplTransfer200Response as CsplTransfer200Response
 from sipher_client.models.cspl_transfer200_response_data import CsplTransfer200ResponseData as CsplTransfer200ResponseData
 from sipher_client.models.cspl_transfer_request import CsplTransferRequest as CsplTransferRequest
@@ -317,6 +347,11 @@ from sipher_client.models.decrypt_arcium_result_request_viewing_key import Decry
 from sipher_client.models.decrypt_inco_result200_response import DecryptIncoResult200Response as DecryptIncoResult200Response
 from sipher_client.models.decrypt_inco_result200_response_data import DecryptIncoResult200ResponseData as DecryptIncoResult200ResponseData
 from sipher_client.models.decrypt_inco_result_request import DecryptIncoResultRequest as DecryptIncoResultRequest
+from sipher_client.models.delete_session200_response import DeleteSession200Response as DeleteSession200Response
+from sipher_client.models.delete_session200_response_data import DeleteSession200ResponseData as DeleteSession200ResponseData
+from sipher_client.models.encrypt_ballot200_response import EncryptBallot200Response as EncryptBallot200Response
+from sipher_client.models.encrypt_ballot200_response_data import EncryptBallot200ResponseData as EncryptBallot200ResponseData
+from sipher_client.models.encrypt_ballot_request import EncryptBallotRequest as EncryptBallotRequest
 from sipher_client.models.encrypt_inco_value200_response import EncryptIncoValue200Response as EncryptIncoValue200Response
 from sipher_client.models.encrypt_inco_value200_response_data import EncryptIncoValue200ResponseData as EncryptIncoValue200ResponseData
 from sipher_client.models.encrypt_inco_value_request import EncryptIncoValueRequest as EncryptIncoValueRequest
@@ -343,6 +378,10 @@ from sipher_client.models.get_rpc_providers200_response import GetRpcProviders20
 from sipher_client.models.get_rpc_providers200_response_data import GetRpcProviders200ResponseData as GetRpcProviders200ResponseData
 from sipher_client.models.get_rpc_providers200_response_data_active import GetRpcProviders200ResponseDataActive as GetRpcProviders200ResponseDataActive
 from sipher_client.models.get_rpc_providers200_response_data_supported_inner import GetRpcProviders200ResponseDataSupportedInner as GetRpcProviders200ResponseDataSupportedInner
+from sipher_client.models.get_session200_response import GetSession200Response as GetSession200Response
+from sipher_client.models.get_session200_response_data import GetSession200ResponseData as GetSession200ResponseData
+from sipher_client.models.get_tally200_response import GetTally200Response as GetTally200Response
+from sipher_client.models.get_tally200_response_data import GetTally200ResponseData as GetTally200ResponseData
 from sipher_client.models.near_transfer_data import NearTransferData as NearTransferData
 from sipher_client.models.near_transfer_data_actions_inner import NearTransferDataActionsInner as NearTransferDataActionsInner
 from sipher_client.models.privacy_score200_response import PrivacyScore200Response as PrivacyScore200Response
@@ -409,6 +448,12 @@ from sipher_client.models.submit_arcium_computation200_response import SubmitArc
 from sipher_client.models.submit_arcium_computation200_response_data import SubmitArciumComputation200ResponseData as SubmitArciumComputation200ResponseData
 from sipher_client.models.submit_arcium_computation_request import SubmitArciumComputationRequest as SubmitArciumComputationRequest
 from sipher_client.models.submit_arcium_computation_request_viewing_key import SubmitArciumComputationRequestViewingKey as SubmitArciumComputationRequestViewingKey
+from sipher_client.models.submit_ballot200_response import SubmitBallot200Response as SubmitBallot200Response
+from sipher_client.models.submit_ballot200_response_data import SubmitBallot200ResponseData as SubmitBallot200ResponseData
+from sipher_client.models.submit_ballot_request import SubmitBallotRequest as SubmitBallotRequest
+from sipher_client.models.tally_votes200_response import TallyVotes200Response as TallyVotes200Response
+from sipher_client.models.tally_votes200_response_data import TallyVotes200ResponseData as TallyVotes200ResponseData
+from sipher_client.models.tally_votes_request import TallyVotesRequest as TallyVotesRequest
 from sipher_client.models.transfer_claim200_response import TransferClaim200Response as TransferClaim200Response
 from sipher_client.models.transfer_claim200_response_data import TransferClaim200ResponseData as TransferClaim200ResponseData
 from sipher_client.models.transfer_claim_request import TransferClaimRequest as TransferClaimRequest
@@ -422,6 +467,9 @@ from sipher_client.models.transfer_private_request_recipient_meta_address import
 from sipher_client.models.transfer_shield200_response import TransferShield200Response as TransferShield200Response
 from sipher_client.models.transfer_shield200_response_data import TransferShield200ResponseData as TransferShield200ResponseData
 from sipher_client.models.transfer_shield_request import TransferShieldRequest as TransferShieldRequest
+from sipher_client.models.update_session200_response import UpdateSession200Response as UpdateSession200Response
+from sipher_client.models.update_session200_response_data import UpdateSession200ResponseData as UpdateSession200ResponseData
+from sipher_client.models.update_session_request import UpdateSessionRequest as UpdateSessionRequest
 from sipher_client.models.viewing_key import ViewingKey as ViewingKey
 from sipher_client.models.viewing_key_decrypt200_response import ViewingKeyDecrypt200Response as ViewingKeyDecrypt200Response
 from sipher_client.models.viewing_key_decrypt200_response_data import ViewingKeyDecrypt200ResponseData as ViewingKeyDecrypt200ResponseData
