@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 71 endpoints | 566 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go)
+**Stats:** 71 endpoints | 568 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go)
 
 ---
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (566 tests, 36 suites)
+pnpm test -- --run              # Run tests (568 tests, 36 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 pnpm openapi:export              # Export static OpenAPI spec to dist/openapi.json
@@ -306,7 +306,7 @@ sipher/
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   ├── privacy-demo-agent.ts      # Privacy demo: 20-step flow, 34 endpoints (judge demo)
 │   └── demo-flow.ts                # Quick-start E2E demo (21 endpoints)
-├── tests/                          # 566 tests across 36 suites
+├── tests/                          # 568 tests across 36 suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -507,7 +507,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (566 tests must pass)
+- Run `pnpm test -- --run` after code changes (568 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -554,7 +554,7 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | ✅ Complete |
 | 6 | Enterprise | 6 | ✅ Complete |
 
-**Progress:** 38/38 issues complete | 566 tests | 71 endpoints | 17 chains | All phases complete | Live demo at /v1/demo
+**Progress:** 38/38 issues complete | 568 tests | 71 endpoints | 17 chains | All phases complete | Live demo at /v1/demo
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
