@@ -173,6 +173,8 @@ router.post(
           isOwner,
           chain,
           curve: detectedCurve,
+          trustLevel: 'high',
+          trustWarning: 'This endpoint receives private keys. For zero-trust, use @sip-protocol/sdk client-side.',
         },
       })
     } catch (err) {

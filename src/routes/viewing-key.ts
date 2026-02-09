@@ -88,6 +88,8 @@ router.post(
           ciphertext: encrypted.ciphertext,
           nonce: encrypted.nonce,
           viewingKeyHash: encrypted.viewingKeyHash,
+          trustLevel: 'high',
+          trustWarning: 'This endpoint receives viewing key material. For zero-trust, encrypt client-side using @sip-protocol/sdk.',
         },
       })
     } catch (err) {
@@ -233,6 +235,8 @@ router.post(
           recipient: decrypted.recipient,
           amount: decrypted.amount,
           timestamp: decrypted.timestamp,
+          trustLevel: 'high',
+          trustWarning: 'This endpoint receives viewing key material. For zero-trust, decrypt client-side using @sip-protocol/sdk.',
         },
       })
     } catch (err) {

@@ -216,6 +216,8 @@ router.post(
               estimatedFee: estimatedFee.value?.toString() ?? null,
             },
             warning: 'This was a simulation. No tokens were transferred. Set dryRun: false to execute.',
+            trustLevel: 'critical',
+            trustWarning: 'This endpoint receives private keys to derive stealth keys server-side. For zero-trust, derive keys client-side using @sip-protocol/sdk.',
           },
         })
         return
@@ -240,6 +242,8 @@ router.post(
           destinationAddress,
           amount: tokenAmount.toString(),
           explorerUrl: `https://solscan.io/tx/${txSignature}`,
+          trustLevel: 'critical',
+          trustWarning: 'This endpoint receives private keys to derive stealth keys server-side. For zero-trust, derive keys client-side using @sip-protocol/sdk.',
         },
       })
     } catch (err) {
