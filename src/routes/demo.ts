@@ -5,6 +5,7 @@ import {
   generateStealthAddress,
   checkStealthAddress,
   isEd25519Chain,
+  ed25519PublicKeyToSolanaAddress,
 } from '@sip-protocol/sdk'
 import {
   commit,
@@ -108,8 +109,8 @@ async function runDemo(): Promise<unknown> {
     passed: !!solMeta.metaAddress.spendingKey,
     crypto: 'Ed25519 ECDH via @noble/curves',
     result: {
-      spendingKey: truncHex(solMeta.metaAddress.spendingKey),
-      viewingKey: truncHex(solMeta.metaAddress.viewingKey),
+      spendingKey: ed25519PublicKeyToSolanaAddress(solMeta.metaAddress.spendingKey as HexString),
+      viewingKey: ed25519PublicKeyToSolanaAddress(solMeta.metaAddress.viewingKey as HexString),
       chain: 'solana',
       curve: 'ed25519',
     },
@@ -152,7 +153,7 @@ async function runDemo(): Promise<unknown> {
     passed: !!s3.result.stealthAddress.address,
     crypto: 'ECDH shared secret → stealth pubkey derivation',
     result: {
-      address: truncHex(s3.result.stealthAddress.address),
+      address: ed25519PublicKeyToSolanaAddress(s3.result.stealthAddress.address as HexString),
       ephemeralPubKey: truncHex(s3.result.stealthAddress.ephemeralPublicKey),
       viewTag: s3.result.stealthAddress.viewTag,
     },
@@ -200,7 +201,9 @@ async function runDemo(): Promise<unknown> {
       generated: s5.result.map(r => ({
         chain: r.chain,
         curve: r.curve,
-        spendingKey: truncHex(r.meta.metaAddress.spendingKey),
+        spendingKey: isEd25519Chain(r.chain)
+          ? ed25519PublicKeyToSolanaAddress(r.meta.metaAddress.spendingKey as HexString)
+          : truncHex(r.meta.metaAddress.spendingKey),
       })),
     },
   })
@@ -627,7 +630,7 @@ async function runDemo(): Promise<unknown> {
     crypto: 'Ed25519 (NEAR) + secp256k1 (Cosmos) in same flow',
     result: {
       near: {
-        address: truncHex(s22.result.nearStealth.stealthAddress.address),
+        address: s22.result.nearStealth.stealthAddress.address.slice(2),  // NEAR implicit = hex without 0x
         curve: 'ed25519',
       },
       cosmos: {

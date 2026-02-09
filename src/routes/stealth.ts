@@ -5,6 +5,7 @@ import {
   generateStealthAddress,
   checkStealthAddress,
   isEd25519Chain,
+  ed25519PublicKeyToSolanaAddress,
 } from '@sip-protocol/sdk'
 import type { StealthMetaAddress, HexString, ChainId } from '@sip-protocol/types'
 import { validateRequest } from '../middleware/validation.js'
@@ -66,6 +67,14 @@ const checkSchema = z.object({
   chain: chainEnum.default('solana'),
 })
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Convert ed25519 hex pubkey to Solana base58. Only for Solana chain. */
+function toNativeAddress(hex: string, chain: string): string | undefined {
+  if (chain === 'solana') return ed25519PublicKeyToSolanaAddress(hex as HexString)
+  return undefined
+}
+
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 router.post(
@@ -80,7 +89,13 @@ router.post(
       res.json({
         success: true,
         data: {
-          metaAddress: result.metaAddress,
+          metaAddress: {
+            ...result.metaAddress,
+            ...(chain === 'solana' && {
+              spendingKeyBase58: toNativeAddress(result.metaAddress.spendingKey, chain),
+              viewingKeyBase58: toNativeAddress(result.metaAddress.viewingKey, chain),
+            }),
+          },
           spendingPrivateKey: result.spendingPrivateKey,
           viewingPrivateKey: result.viewingPrivateKey,
           chain,
@@ -108,14 +123,20 @@ router.post(
       }
 
       const result = generateStealthAddress(meta)
+      const chain = recipientMetaAddress.chain
 
       res.json({
         success: true,
         data: {
-          stealthAddress: result.stealthAddress,
+          stealthAddress: {
+            ...result.stealthAddress,
+            ...(chain === 'solana' && {
+              addressBase58: toNativeAddress(result.stealthAddress.address, chain),
+            }),
+          },
           sharedSecret: result.sharedSecret,
-          chain: recipientMetaAddress.chain,
-          curve: isEd25519Chain(recipientMetaAddress.chain) ? 'ed25519' : 'secp256k1',
+          chain,
+          curve: isEd25519Chain(chain) ? 'ed25519' : 'secp256k1',
         },
       })
     } catch (err) {
