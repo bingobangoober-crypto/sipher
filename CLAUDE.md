@@ -6,7 +6,7 @@
 **Live URL:** https://sipher.sip-protocol.org
 **Tagline:** "Privacy-as-a-Skill for Multi-Chain Agents"
 **Purpose:** REST API + OpenClaw skill enabling any autonomous agent to add transaction privacy via SIP Protocol
-**Stats:** 71 endpoints | 568 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go) | Eliza plugin
+**Stats:** 71 endpoints | 573 tests | 17 chains | 4 client SDKs (TS, Python, Rust, Go) | Eliza plugin
 
 ---
 
@@ -68,7 +68,7 @@
 pnpm install                    # Install dependencies
 pnpm dev                        # Dev server (localhost:5006)
 pnpm build                      # Build for production
-pnpm test -- --run              # Run tests (568 tests, 36 suites)
+pnpm test -- --run              # Run tests (573 tests, 36 suites)
 pnpm typecheck                  # Type check
 pnpm demo                       # Full-flow demo (requires dev server running)
 pnpm openapi:export              # Export static OpenAPI spec to dist/openapi.json
@@ -269,7 +269,7 @@ sipher/
 │   │   ├── session.ts              # Session CRUD (create, get, update, delete)
 │   │   ├── governance.ts           # Governance voting privacy (encrypt, submit, tally, getTally)
 │   │   ├── compliance.ts           # Compliance (disclose, report, report/:id)
-│   │   ├── jito.ts                 # Jito gas abstraction (relay, bundle/:id)
+│   │   ├── jito.ts                 # Jito bundle relay (real Block Engine or mock, relay, bundle/:id)
 │   │   ├── billing.ts              # Billing & usage (usage, subscription, invoices, portal, webhook)
 │   │   └── index.ts                # Route aggregator
 │   ├── services/
@@ -289,7 +289,7 @@ sipher/
 │   │   ├── session-provider.ts     # Session management (LRU cache + Redis, CRUD, ownership)
 │   │   ├── governance-provider.ts # Governance voting (encrypted ballots, nullifiers, homomorphic tally)
 │   │   ├── compliance-provider.ts # Compliance provider (disclosure, reports, auditor verification)
-│   │   ├── jito-provider.ts       # Jito block engine mock (bundle relay, status, tip accounts)
+│   │   ├── jito-provider.ts       # Jito block engine (real via JITO_BLOCK_ENGINE_URL, mock fallback)
 │   │   ├── stripe-provider.ts     # Mock Stripe provider (subscriptions, invoices, portal, webhooks)
 │   │   ├── usage-provider.ts      # Usage tracking & daily quotas (Redis + LRU fallback)
 │   │   └── backend-registry.ts    # Privacy backend registry singleton (SIPNative + Arcium + Inco)
@@ -329,7 +329,7 @@ sipher/
 │   ├── devnet-shielded-transfer.ts # Real on-chain devnet transfer (7 steps, sign+submit)
 │   ├── eliza-plugin-demo.ts       # Eliza plugin demo (5 actions, no runtime needed)
 │   └── demo-flow.ts                # Quick-start E2E demo (21 endpoints)
-├── tests/                          # 568 tests across 36 suites
+├── tests/                          # 573 tests across 36 suites
 │   ├── health.test.ts              # 11 tests (health + ready + root + skill + 404 + reqId)
 │   ├── stealth.test.ts             # 10 tests
 │   ├── commitment.test.ts          # 16 tests (create, verify, add, subtract)
@@ -357,7 +357,7 @@ sipher/
 │   ├── session.test.ts            # 28 tests (CRUD, middleware merge, tier gating, ownership)
 │   ├── governance.test.ts         # 24 tests (encrypt, submit, tally, double-vote, ballot limit, E2E flow)
 │   ├── compliance.test.ts         # 23 tests (disclose, report, get, tier gating, auditor verification)
-│   ├── jito.test.ts               # 20 tests (relay, bundle status, tier gating, idempotency, state machine)
+│   ├── jito.test.ts               # 25 tests (relay, bundle status, tier gating, idempotency, state machine, real mode)
 │   ├── billing.test.ts            # 31 tests (usage tracking, quotas, metering, subscriptions, invoices, webhooks)
 │   └── demo.test.ts               # 12 tests (live demo, 25 crypto steps, no auth)
 ├── Dockerfile                      # Multi-stage Alpine
@@ -436,8 +436,8 @@ All return `ApiResponse<T>`: `{ success, data?, error? }`
 | POST | `/v1/governance/ballot/submit` | Submit encrypted ballot to a proposal | Yes | ✓ |
 | POST | `/v1/governance/tally` | Homomorphic tally of all ballots for a proposal | Yes | ✓ |
 | GET | `/v1/governance/tally/:id` | Get tally result | Yes | — |
-| POST | `/v1/jito/relay` | Submit transaction(s) via Jito bundle (beta) | Yes | ✓ |
-| GET | `/v1/jito/bundle/:id` | Poll Jito bundle status (beta) | Yes | — |
+| POST | `/v1/jito/relay` | Submit transaction(s) via Jito Block Engine (real when configured, mock fallback) | Yes | ✓ |
+| GET | `/v1/jito/bundle/:id` | Poll Jito bundle status (real or mock) | Yes | — |
 | GET | `/v1/billing/usage` | Current period usage by category | Yes | — |
 | GET | `/v1/billing/subscription` | Current subscription details | Yes | — |
 | POST | `/v1/billing/subscribe` | Create/change subscription | Yes | — |
@@ -530,7 +530,7 @@ All error codes are centralized in `src/errors/codes.ts` (ErrorCode enum). Full 
 ## AI GUIDELINES
 
 ### DO:
-- Run `pnpm test -- --run` after code changes (568 tests must pass)
+- Run `pnpm test -- --run` after code changes (573 tests must pass)
 - Run `pnpm typecheck` before committing
 - Use @sip-protocol/sdk for all crypto operations (never roll your own)
 - Keep API responses consistent: `{ success, data?, error? }`
@@ -577,12 +577,12 @@ See [ROADMAP.md](ROADMAP.md) for the full 6-phase roadmap (38 issues across 6 mi
 | 5 | Backend Aggregation | 5 | ✅ Complete |
 | 6 | Enterprise | 6 | ✅ Complete |
 
-**Progress:** 38/38 issues complete | 568 tests | 71 endpoints | 17 chains | All phases complete | Live demo at /v1/demo
+**Progress:** 38/38 issues complete | 573 tests | 71 endpoints | 17 chains | All phases complete | Live demo at /v1/demo
 
 **Quick check:** `gh issue list -R sip-protocol/sipher --state open`
 
 ---
 
 **Last Updated:** 2026-02-09
-**Status:** Phase 6 Complete | 71 Endpoints | 568 Tests | 17 Chains | 4 SDKs | Eliza Plugin | Devnet Proof | Agent #274 Active
+**Status:** Phase 6 Complete | 71 Endpoints | 573 Tests | 17 Chains | 4 SDKs | Eliza Plugin | Devnet Proof | Real Jito Integration | Agent #274 Active
 **Devnet Proof:** [Solscan](https://solscan.io/tx/4FmLGsLkC5DYJojpQeSQoGMArsJonTEnx729gnFCeYEjFsr8Z46VrDzKQXLhFrpM9Uj6ezBtCQckU28odzvjvV4a?cluster=devnet) — real 0.01 SOL shielded transfer via stealth address
