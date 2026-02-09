@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import express, { Request, Response, NextFunction, Router } from 'express'
-import { resetJitoProvider, _setBundleTimestamp, JITO_TIP_ACCOUNTS } from '../src/services/jito-provider.js'
+import { resetJitoProvider, _setBundleTimestamp, _setJitoUrl, JITO_TIP_ACCOUNTS, isJitoLive, submitBundle as sbDirect, getBundleStatus as gbsDirect } from '../src/services/jito-provider.js'
 
 vi.mock('@solana/web3.js', async () => {
   const actual = await vi.importActual('@solana/web3.js')
@@ -267,7 +267,7 @@ describe('Jito gas sponsorship tier gating', () => {
             res.status(403).json({ success: false, error: { code: ErrorCode.TIER_ACCESS_DENIED, message: 'Gas sponsorship requires enterprise tier. Current: ' + (req.apiKeyTier ?? 'unknown') + '.' } })
             return
           }
-          const result = submitBundle({ transactions, tipLamports, gasSponsorship })
+          const result = await submitBundle({ transactions, tipLamports, gasSponsorship })
           res.json({ success: true, beta: true, warning: getBetaWarning(req), data: result })
         } catch (err) { next(err) }
       },
@@ -347,5 +347,126 @@ describe('Jito bundle state machine', () => {
     res = await request(app).get(`/v1/jito/bundle/${bundleId}`)
     expect(res.body.data.status).toBe('confirmed')
     expect(res.body.data.confirmedAt).toBeDefined()
+  })
+})
+
+// ─── Real Mode (mocked fetch) ──────────────────────────────────────────────
+
+describe('Jito real mode (mocked fetch)', () => {
+  const originalFetch = globalThis.fetch
+
+  beforeEach(() => {
+    resetJitoProvider()
+    _setJitoUrl('https://test-jito.example.com/api/v1/bundles')
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    _setJitoUrl(null)
+  })
+
+  it('isJitoLive() returns false without JITO_BLOCK_ENGINE_URL', () => {
+    _setJitoUrl(null)
+    expect(isJitoLive()).toBe(false)
+  })
+
+  it('submitBundle calls sendBundle RPC and returns bundle ID', async () => {
+    const fakeBundleId = 'a'.repeat(64)
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jsonrpc: '2.0', id: 1, result: fakeBundleId }),
+    })
+
+    const result = await sbDirect({ transactions: ['dHgx'], tipLamports: '15000' })
+
+    expect(result.bundleId).toBe('jito_' + fakeBundleId)
+    expect(result.status).toBe('submitted')
+    expect(result.tipLamports).toBe('15000')
+    expect(result.slot).toBe(0)
+    expect(result.signature).toBe('')
+    expect(result.estimatedConfirmation).toBeGreaterThan(Date.now() - 1000)
+
+    expect(globalThis.fetch).toHaveBeenCalledOnce()
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0]
+    expect(fetchCall[0]).toBe('https://test-jito.example.com/api/v1/bundles')
+    const body = JSON.parse(fetchCall[1]?.body as string)
+    expect(body.method).toBe('sendBundle')
+    expect(body.params).toEqual([['dHgx']])
+  })
+
+  it('getBundleStatus maps confirmed status from getBundleStatuses RPC', async () => {
+    const rawId = 'b'.repeat(64)
+
+    // Submit to populate the realBundleIdMap
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jsonrpc: '2.0', id: 1, result: rawId }),
+    })
+    const submitResult = await sbDirect({ transactions: ['dHgx'] })
+    const bundleId = submitResult.bundleId
+
+    // Now mock getBundleStatuses response
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        jsonrpc: '2.0',
+        id: 2,
+        result: {
+          context: { slot: 280000500 },
+          value: [{
+            bundle_id: rawId,
+            transactions: ['5xyz...sig'],
+            slot: 280000500,
+            confirmation_status: 'confirmed',
+          }],
+        },
+      }),
+    })
+
+    const status = await gbsDirect(bundleId)
+    expect(status).not.toBeNull()
+    expect(status!.status).toBe('confirmed')
+    expect(status!.progress).toBe(100)
+    expect(status!.slot).toBe(280000500)
+    expect(status!.signature).toBe('5xyz...sig')
+    expect(status!.confirmedAt).toBeDefined()
+  })
+
+  it('getBundleStatus falls back to getInflightBundleStatuses when primary returns empty', async () => {
+    const rawId = 'c'.repeat(64)
+
+    // Submit first
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jsonrpc: '2.0', id: 1, result: rawId }),
+    })
+    const submitResult = await sbDirect({ transactions: ['dHgx'] })
+    const bundleId = submitResult.bundleId
+
+    // getBundleStatuses returns empty, getInflightBundleStatuses returns Pending
+    let callCount = 0
+    globalThis.fetch = vi.fn().mockImplementation(async () => {
+      callCount++
+      if (callCount === 1) {
+        return { ok: true, json: async () => ({ jsonrpc: '2.0', id: 2, result: { context: { slot: 0 }, value: [] } }) }
+      }
+      return { ok: true, json: async () => ({ jsonrpc: '2.0', id: 3, result: [{ bundle_id: rawId, status: 'Pending' }] }) }
+    })
+
+    const status = await gbsDirect(bundleId)
+    expect(status).not.toBeNull()
+    expect(status!.status).toBe('bundled')
+    expect(status!.progress).toBe(33)
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('submitBundle throws on network error', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+    })
+
+    await expect(sbDirect({ transactions: ['dHgx'] })).rejects.toThrow('Jito RPC HTTP 503')
   })
 })
