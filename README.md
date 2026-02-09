@@ -38,6 +38,7 @@ hidden amounts, and compliance viewing keys across 17 chains.**
 - [Demo Video + Live Demo](#-live-demo-no-api-key-required)
 - [The Problem](#-the-problem)
 - [The Solution](#-the-solution)
+- [Your First Private Payment](#-your-first-private-payment-in-3-api-calls)
 - [Trust Model](#-trust-model)
 - [On-Chain Program](#%EF%B8%8F-on-chain-program)
 - [Cryptographic Primitives](#-cryptographic-primitives-real-not-mocked)
@@ -194,6 +195,66 @@ Agent (Claude, LangChain, CrewAI, OpenClaw, etc.)
 │  • Range proofs  │               │  Sunspot (roadmap)     │
 │  • 17 chains     │               │                       │
 └──────────────────┘               └───────────────────────┘
+```
+
+---
+
+## 🚀 Your First Private Payment in 3 API Calls
+
+No setup, no SDK, no wallet. Just `curl`.
+
+**Step 1 — Generate a stealth meta-address (recipient side):**
+
+```bash
+curl -s -X POST https://sipher.sip-protocol.org/v1/stealth/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{"chain": "solana"}' | jq '.data.metaAddress'
+```
+
+Returns spending + viewing public keys (base58 for Solana). Share these with the sender.
+
+**Step 2 — Derive a one-time stealth address (sender side):**
+
+```bash
+curl -s -X POST https://sipher.sip-protocol.org/v1/stealth/derive \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{
+    "recipientMetaAddress": {
+      "spendingKey": "<spendingKey from step 1>",
+      "viewingKey": "<viewingKey from step 1>",
+      "chain": "solana"
+    }
+  }' | jq '.data.stealthAddress'
+```
+
+Returns an unlinkable one-time address. No one can connect it to the recipient.
+
+**Step 3 — Build a shielded transfer:**
+
+```bash
+curl -s -X POST https://sipher.sip-protocol.org/v1/transfer/shield \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{
+    "senderAddress": "YourSolanaAddress",
+    "recipientMetaAddress": {
+      "spendingKey": "<spendingKey from step 1>",
+      "viewingKey": "<viewingKey from step 1>",
+      "chain": "solana"
+    },
+    "amount": "1000000000",
+    "mint": "So11111111111111111111111111111111111111112"
+  }' | jq '.data'
+```
+
+Returns an unsigned transaction + Pedersen commitment. Sign and submit to Solana.
+
+**Or see everything at once (no API key needed):**
+
+```bash
+curl -s https://sipher.sip-protocol.org/v1/demo | jq '.data.summary'
 ```
 
 ---
