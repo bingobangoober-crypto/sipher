@@ -89,6 +89,11 @@ npx tsx scripts/sipher-agent.ts status     # Show agent state + engaged agents
 # Privacy Demo Agent (scripts/privacy-demo-agent.ts)
 npx tsx scripts/privacy-demo-agent.ts      # Full 20-step privacy flow (34 endpoints)
 SIPHER_URL=https://sipher.sip-protocol.org npx tsx scripts/privacy-demo-agent.ts  # Against production
+
+# Devnet Shielded Transfer (scripts/devnet-shielded-transfer.ts)
+# Prerequisites: funded devnet keypair + server running on devnet RPC
+SOLANA_RPC_URL=https://api.devnet.solana.com pnpm dev  # Start server on devnet (separate terminal)
+pnpm devnet-demo                           # Execute real on-chain shielded transfer
 ```
 
 ---
@@ -321,6 +326,7 @@ sipher/
 │   ├── colosseum.ts                # Template-based engagement (LLM for comments/posts)
 │   ├── sipher-agent.ts             # LLM-powered autonomous agent (ReAct loop)
 │   ├── privacy-demo-agent.ts      # Privacy demo: 20-step flow, 34 endpoints (judge demo)
+│   ├── devnet-shielded-transfer.ts # Real on-chain devnet transfer (7 steps, sign+submit)
 │   ├── eliza-plugin-demo.ts       # Eliza plugin demo (5 actions, no runtime needed)
 │   └── demo-flow.ts                # Quick-start E2E demo (21 endpoints)
 ├── tests/                          # 568 tests across 36 suites
