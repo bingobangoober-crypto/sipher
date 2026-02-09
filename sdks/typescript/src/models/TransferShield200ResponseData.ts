@@ -67,7 +67,42 @@ export interface TransferShield200ResponseData {
      * @memberof TransferShield200ResponseData
      */
     sharedSecret?: string;
+    /**
+     * SIP Privacy program ID
+     * @type {string}
+     * @memberof TransferShield200ResponseData
+     */
+    programId?: string;
+    /**
+     * Transfer record PDA (base58). Null when using SystemProgram fallback.
+     * @type {string}
+     * @memberof TransferShield200ResponseData
+     */
+    noteId?: string;
+    /**
+     * Which program path was used for the transaction.
+     * @type {string}
+     * @memberof TransferShield200ResponseData
+     */
+    instructionType?: TransferShield200ResponseDataInstructionTypeEnum;
+    /**
+     * Amount encrypted with viewing key hash (hex). Only present on Anchor path.
+     * @type {string}
+     * @memberof TransferShield200ResponseData
+     */
+    encryptedAmount?: string;
 }
+
+
+/**
+ * @export
+ */
+export const TransferShield200ResponseDataInstructionTypeEnum = {
+    ANCHOR: 'anchor',
+    SYSTEM: 'system'
+} as const;
+export type TransferShield200ResponseDataInstructionTypeEnum = typeof TransferShield200ResponseDataInstructionTypeEnum[keyof typeof TransferShield200ResponseDataInstructionTypeEnum];
+
 
 /**
  * Check if a given object implements the TransferShield200ResponseData interface.
@@ -94,6 +129,10 @@ export function TransferShield200ResponseDataFromJSONTyped(json: any, ignoreDisc
         'blindingFactor': json['blindingFactor'] == null ? undefined : json['blindingFactor'],
         'viewingKeyHash': json['viewingKeyHash'] == null ? undefined : json['viewingKeyHash'],
         'sharedSecret': json['sharedSecret'] == null ? undefined : json['sharedSecret'],
+        'programId': json['programId'] == null ? undefined : json['programId'],
+        'noteId': json['noteId'] == null ? undefined : json['noteId'],
+        'instructionType': json['instructionType'] == null ? undefined : json['instructionType'],
+        'encryptedAmount': json['encryptedAmount'] == null ? undefined : json['encryptedAmount'],
     };
 }
 
@@ -116,6 +155,10 @@ export function TransferShield200ResponseDataToJSONTyped(value?: TransferShield2
         'blindingFactor': value['blindingFactor'],
         'viewingKeyHash': value['viewingKeyHash'],
         'sharedSecret': value['sharedSecret'],
+        'programId': value['programId'],
+        'noteId': value['noteId'],
+        'instructionType': value['instructionType'],
+        'encryptedAmount': value['encryptedAmount'],
     };
 }
 

@@ -541,9 +541,4 @@ sipher_client/py.typed
 sipher_client/rest.py
 test-requirements.txt
 test/__init__.py
-test/test_scan_assets200_response.py
-test/test_scan_assets200_response_data.py
-test/test_scan_assets200_response_data_assets_inner.py
-test/test_scan_assets_request.py
-test/test_scan_assets_request_display_options.py
 tox.ini

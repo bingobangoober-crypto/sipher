@@ -12,6 +12,10 @@ Name | Type | Description | Notes
 **BlindingFactor** | Pointer to **string** | 0x-prefixed 32-byte hex string | [optional] 
 **ViewingKeyHash** | Pointer to **string** | 0x-prefixed 32-byte hex string | [optional] 
 **SharedSecret** | Pointer to **string** | 0x-prefixed 32-byte hex string | [optional] 
+**ProgramId** | Pointer to **string** | SIP Privacy program ID | [optional] 
+**NoteId** | Pointer to **string** | Transfer record PDA (base58). Null when using SystemProgram fallback. | [optional] 
+**InstructionType** | Pointer to **string** | Which program path was used for the transaction. | [optional] 
+**EncryptedAmount** | Pointer to **string** | Amount encrypted with viewing key hash (hex). Only present on Anchor path. | [optional] 
 
 ## Methods
 
@@ -231,6 +235,106 @@ SetSharedSecret sets SharedSecret field to given value.
 `func (o *TransferShield200ResponseData) HasSharedSecret() bool`
 
 HasSharedSecret returns a boolean if a field has been set.
+
+### GetProgramId
+
+`func (o *TransferShield200ResponseData) GetProgramId() string`
+
+GetProgramId returns the ProgramId field if non-nil, zero value otherwise.
+
+### GetProgramIdOk
+
+`func (o *TransferShield200ResponseData) GetProgramIdOk() (*string, bool)`
+
+GetProgramIdOk returns a tuple with the ProgramId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetProgramId
+
+`func (o *TransferShield200ResponseData) SetProgramId(v string)`
+
+SetProgramId sets ProgramId field to given value.
+
+### HasProgramId
+
+`func (o *TransferShield200ResponseData) HasProgramId() bool`
+
+HasProgramId returns a boolean if a field has been set.
+
+### GetNoteId
+
+`func (o *TransferShield200ResponseData) GetNoteId() string`
+
+GetNoteId returns the NoteId field if non-nil, zero value otherwise.
+
+### GetNoteIdOk
+
+`func (o *TransferShield200ResponseData) GetNoteIdOk() (*string, bool)`
+
+GetNoteIdOk returns a tuple with the NoteId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetNoteId
+
+`func (o *TransferShield200ResponseData) SetNoteId(v string)`
+
+SetNoteId sets NoteId field to given value.
+
+### HasNoteId
+
+`func (o *TransferShield200ResponseData) HasNoteId() bool`
+
+HasNoteId returns a boolean if a field has been set.
+
+### GetInstructionType
+
+`func (o *TransferShield200ResponseData) GetInstructionType() string`
+
+GetInstructionType returns the InstructionType field if non-nil, zero value otherwise.
+
+### GetInstructionTypeOk
+
+`func (o *TransferShield200ResponseData) GetInstructionTypeOk() (*string, bool)`
+
+GetInstructionTypeOk returns a tuple with the InstructionType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetInstructionType
+
+`func (o *TransferShield200ResponseData) SetInstructionType(v string)`
+
+SetInstructionType sets InstructionType field to given value.
+
+### HasInstructionType
+
+`func (o *TransferShield200ResponseData) HasInstructionType() bool`
+
+HasInstructionType returns a boolean if a field has been set.
+
+### GetEncryptedAmount
+
+`func (o *TransferShield200ResponseData) GetEncryptedAmount() string`
+
+GetEncryptedAmount returns the EncryptedAmount field if non-nil, zero value otherwise.
+
+### GetEncryptedAmountOk
+
+`func (o *TransferShield200ResponseData) GetEncryptedAmountOk() (*string, bool)`
+
+GetEncryptedAmountOk returns a tuple with the EncryptedAmount field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetEncryptedAmount
+
+`func (o *TransferShield200ResponseData) SetEncryptedAmount(v string)`
+
+SetEncryptedAmount sets EncryptedAmount field to given value.
+
+### HasEncryptedAmount
+
+`func (o *TransferShield200ResponseData) HasEncryptedAmount() bool`
+
+HasEncryptedAmount returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

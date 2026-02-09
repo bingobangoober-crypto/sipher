@@ -1,39 +1,16 @@
 {
   "name": "@sip-protocol/sipher-client",
-  "version": "0.1.1",
-  "description": "Privacy-as-a-Skill TypeScript client — stealth addresses, shielded transfers, Pedersen commitments, viewing keys, and more",
-  "author": "SIP Protocol <rector@rectorspace.com>",
-  "license": "MIT",
+  "version": "0.1.0",
+  "description": "OpenAPI client for @sip-protocol/sipher-client",
+  "author": "OpenAPI-Generator",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sip-protocol/sipher.git",
-    "directory": "sdks/typescript"
+    "url": "https://github.com/GIT_USER_ID/GIT_REPO_ID.git"
   },
-  "homepage": "https://sipher.sip-protocol.org/docs",
-  "bugs": {
-    "url": "https://github.com/sip-protocol/sipher/issues"
-  },
-  "keywords": [
-    "solana",
-    "privacy",
-    "stealth-addresses",
-    "pedersen-commitments",
-    "viewing-keys",
-    "sip-protocol",
-    "sipher",
-    "web3",
-    "agent",
-    "ai-agent"
-  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/esm/index.js",
   "sideEffects": false,
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "prepare": "npm run build"

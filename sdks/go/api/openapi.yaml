@@ -2692,13 +2692,17 @@ components:
     transferShield_200_response_data:
       example:
         blindingFactor: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+        instructionType: anchor
         viewingKeyHash: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
         stealthAddress: stealthAddress
         viewTag: 0
         ephemeralPublicKey: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
         commitment: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+        noteId: noteId
+        encryptedAmount: encryptedAmount
         sharedSecret: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
         transaction: transaction
+        programId: programId
       properties:
         transaction:
           description: Base64-encoded unsigned transaction
@@ -2732,17 +2736,40 @@ components:
           example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
           pattern: "^0x[0-9a-fA-F]{64}$"
           type: string
+        programId:
+          description: SIP Privacy program ID
+          type: string
+        noteId:
+          description: Transfer record PDA (base58). Null when using SystemProgram
+            fallback.
+          type: string
+          nullable: true
+        instructionType:
+          description: Which program path was used for the transaction.
+          enum:
+          - anchor
+          - system
+          type: string
+        encryptedAmount:
+          description: Amount encrypted with viewing key hash (hex). Only present
+            on Anchor path.
+          type: string
+          nullable: true
     transferShield_200_response:
       example:
         data:
           blindingFactor: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          instructionType: anchor
           viewingKeyHash: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
           stealthAddress: stealthAddress
           viewTag: 0
           ephemeralPublicKey: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
           commitment: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+          noteId: noteId
+          encryptedAmount: encryptedAmount
           sharedSecret: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
           transaction: transaction
+          programId: programId
         success: true
       properties:
         success:

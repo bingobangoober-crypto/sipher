@@ -35,6 +35,18 @@ pub struct TransferShield200ResponseData {
     /// 0x-prefixed 32-byte hex string
     #[serde(rename = "sharedSecret", skip_serializing_if = "Option::is_none")]
     pub shared_secret: Option<String>,
+    /// SIP Privacy program ID
+    #[serde(rename = "programId", skip_serializing_if = "Option::is_none")]
+    pub program_id: Option<String>,
+    /// Transfer record PDA (base58). Null when using SystemProgram fallback.
+    #[serde(rename = "noteId", skip_serializing_if = "Option::is_none")]
+    pub note_id: Option<String>,
+    /// Which program path was used for the transaction.
+    #[serde(rename = "instructionType", skip_serializing_if = "Option::is_none")]
+    pub instruction_type: Option<InstructionType>,
+    /// Amount encrypted with viewing key hash (hex). Only present on Anchor path.
+    #[serde(rename = "encryptedAmount", skip_serializing_if = "Option::is_none")]
+    pub encrypted_amount: Option<String>,
 }
 
 impl TransferShield200ResponseData {
@@ -48,7 +60,25 @@ impl TransferShield200ResponseData {
             blinding_factor: None,
             viewing_key_hash: None,
             shared_secret: None,
+            program_id: None,
+            note_id: None,
+            instruction_type: None,
+            encrypted_amount: None,
         }
+    }
+}
+/// Which program path was used for the transaction.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum InstructionType {
+    #[serde(rename = "anchor")]
+    Anchor,
+    #[serde(rename = "system")]
+    System,
+}
+
+impl Default for InstructionType {
+    fn default() -> InstructionType {
+        Self::Anchor
     }
 }
 

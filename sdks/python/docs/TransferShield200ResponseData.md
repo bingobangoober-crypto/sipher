@@ -13,6 +13,10 @@ Name | Type | Description | Notes
 **blinding_factor** | **str** | 0x-prefixed 32-byte hex string | [optional] 
 **viewing_key_hash** | **str** | 0x-prefixed 32-byte hex string | [optional] 
 **shared_secret** | **str** | 0x-prefixed 32-byte hex string | [optional] 
+**program_id** | **str** | SIP Privacy program ID | [optional] 
+**note_id** | **str** | Transfer record PDA (base58). Null when using SystemProgram fallback. | [optional] 
+**instruction_type** | **str** | Which program path was used for the transaction. | [optional] 
+**encrypted_amount** | **str** | Amount encrypted with viewing key hash (hex). Only present on Anchor path. | [optional] 
 
 ## Example
 

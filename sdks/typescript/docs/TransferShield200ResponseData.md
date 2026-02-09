@@ -14,6 +14,10 @@ Name | Type
 `blindingFactor` | string
 `viewingKeyHash` | string
 `sharedSecret` | string
+`programId` | string
+`noteId` | string
+`instructionType` | string
+`encryptedAmount` | string
 
 ## Example
 
@@ -30,6 +34,10 @@ const example = {
   "blindingFactor": 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef,
   "viewingKeyHash": 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef,
   "sharedSecret": 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef,
+  "programId": null,
+  "noteId": null,
+  "instructionType": null,
+  "encryptedAmount": null,
 } satisfies TransferShield200ResponseData
 
 console.log(example)

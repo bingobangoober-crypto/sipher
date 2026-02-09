@@ -34,6 +34,14 @@ type TransferShield200ResponseData struct {
 	ViewingKeyHash *string `json:"viewingKeyHash,omitempty" validate:"regexp=^0x[0-9a-fA-F]{64}$"`
 	// 0x-prefixed 32-byte hex string
 	SharedSecret *string `json:"sharedSecret,omitempty" validate:"regexp=^0x[0-9a-fA-F]{64}$"`
+	// SIP Privacy program ID
+	ProgramId *string `json:"programId,omitempty"`
+	// Transfer record PDA (base58). Null when using SystemProgram fallback.
+	NoteId *string `json:"noteId,omitempty"`
+	// Which program path was used for the transaction.
+	InstructionType *string `json:"instructionType,omitempty"`
+	// Amount encrypted with viewing key hash (hex). Only present on Anchor path.
+	EncryptedAmount *string `json:"encryptedAmount,omitempty"`
 }
 
 // NewTransferShield200ResponseData instantiates a new TransferShield200ResponseData object
@@ -309,6 +317,134 @@ func (o *TransferShield200ResponseData) SetSharedSecret(v string) {
 	o.SharedSecret = &v
 }
 
+// GetProgramId returns the ProgramId field value if set, zero value otherwise.
+func (o *TransferShield200ResponseData) GetProgramId() string {
+	if o == nil || IsNil(o.ProgramId) {
+		var ret string
+		return ret
+	}
+	return *o.ProgramId
+}
+
+// GetProgramIdOk returns a tuple with the ProgramId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TransferShield200ResponseData) GetProgramIdOk() (*string, bool) {
+	if o == nil || IsNil(o.ProgramId) {
+		return nil, false
+	}
+	return o.ProgramId, true
+}
+
+// HasProgramId returns a boolean if a field has been set.
+func (o *TransferShield200ResponseData) HasProgramId() bool {
+	if o != nil && !IsNil(o.ProgramId) {
+		return true
+	}
+
+	return false
+}
+
+// SetProgramId gets a reference to the given string and assigns it to the ProgramId field.
+func (o *TransferShield200ResponseData) SetProgramId(v string) {
+	o.ProgramId = &v
+}
+
+// GetNoteId returns the NoteId field value if set, zero value otherwise.
+func (o *TransferShield200ResponseData) GetNoteId() string {
+	if o == nil || IsNil(o.NoteId) {
+		var ret string
+		return ret
+	}
+	return *o.NoteId
+}
+
+// GetNoteIdOk returns a tuple with the NoteId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TransferShield200ResponseData) GetNoteIdOk() (*string, bool) {
+	if o == nil || IsNil(o.NoteId) {
+		return nil, false
+	}
+	return o.NoteId, true
+}
+
+// HasNoteId returns a boolean if a field has been set.
+func (o *TransferShield200ResponseData) HasNoteId() bool {
+	if o != nil && !IsNil(o.NoteId) {
+		return true
+	}
+
+	return false
+}
+
+// SetNoteId gets a reference to the given string and assigns it to the NoteId field.
+func (o *TransferShield200ResponseData) SetNoteId(v string) {
+	o.NoteId = &v
+}
+
+// GetInstructionType returns the InstructionType field value if set, zero value otherwise.
+func (o *TransferShield200ResponseData) GetInstructionType() string {
+	if o == nil || IsNil(o.InstructionType) {
+		var ret string
+		return ret
+	}
+	return *o.InstructionType
+}
+
+// GetInstructionTypeOk returns a tuple with the InstructionType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TransferShield200ResponseData) GetInstructionTypeOk() (*string, bool) {
+	if o == nil || IsNil(o.InstructionType) {
+		return nil, false
+	}
+	return o.InstructionType, true
+}
+
+// HasInstructionType returns a boolean if a field has been set.
+func (o *TransferShield200ResponseData) HasInstructionType() bool {
+	if o != nil && !IsNil(o.InstructionType) {
+		return true
+	}
+
+	return false
+}
+
+// SetInstructionType gets a reference to the given string and assigns it to the InstructionType field.
+func (o *TransferShield200ResponseData) SetInstructionType(v string) {
+	o.InstructionType = &v
+}
+
+// GetEncryptedAmount returns the EncryptedAmount field value if set, zero value otherwise.
+func (o *TransferShield200ResponseData) GetEncryptedAmount() string {
+	if o == nil || IsNil(o.EncryptedAmount) {
+		var ret string
+		return ret
+	}
+	return *o.EncryptedAmount
+}
+
+// GetEncryptedAmountOk returns a tuple with the EncryptedAmount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TransferShield200ResponseData) GetEncryptedAmountOk() (*string, bool) {
+	if o == nil || IsNil(o.EncryptedAmount) {
+		return nil, false
+	}
+	return o.EncryptedAmount, true
+}
+
+// HasEncryptedAmount returns a boolean if a field has been set.
+func (o *TransferShield200ResponseData) HasEncryptedAmount() bool {
+	if o != nil && !IsNil(o.EncryptedAmount) {
+		return true
+	}
+
+	return false
+}
+
+// SetEncryptedAmount gets a reference to the given string and assigns it to the EncryptedAmount field.
+func (o *TransferShield200ResponseData) SetEncryptedAmount(v string) {
+	o.EncryptedAmount = &v
+}
+
 func (o TransferShield200ResponseData) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -342,6 +478,18 @@ func (o TransferShield200ResponseData) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.SharedSecret) {
 		toSerialize["sharedSecret"] = o.SharedSecret
+	}
+	if !IsNil(o.ProgramId) {
+		toSerialize["programId"] = o.ProgramId
+	}
+	if !IsNil(o.NoteId) {
+		toSerialize["noteId"] = o.NoteId
+	}
+	if !IsNil(o.InstructionType) {
+		toSerialize["instructionType"] = o.InstructionType
+	}
+	if !IsNil(o.EncryptedAmount) {
+		toSerialize["encryptedAmount"] = o.EncryptedAmount
 	}
 	return toSerialize, nil
 }

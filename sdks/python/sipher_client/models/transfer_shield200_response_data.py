@@ -36,7 +36,11 @@ class TransferShield200ResponseData(BaseModel):
     blinding_factor: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="0x-prefixed 32-byte hex string", alias="blindingFactor")
     viewing_key_hash: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="0x-prefixed 32-byte hex string", alias="viewingKeyHash")
     shared_secret: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="0x-prefixed 32-byte hex string", alias="sharedSecret")
-    __properties: ClassVar[List[str]] = ["transaction", "stealthAddress", "ephemeralPublicKey", "viewTag", "commitment", "blindingFactor", "viewingKeyHash", "sharedSecret"]
+    program_id: Optional[StrictStr] = Field(default=None, description="SIP Privacy program ID", alias="programId")
+    note_id: Optional[StrictStr] = Field(default=None, description="Transfer record PDA (base58). Null when using SystemProgram fallback.", alias="noteId")
+    instruction_type: Optional[StrictStr] = Field(default=None, description="Which program path was used for the transaction.", alias="instructionType")
+    encrypted_amount: Optional[StrictStr] = Field(default=None, description="Amount encrypted with viewing key hash (hex). Only present on Anchor path.", alias="encryptedAmount")
+    __properties: ClassVar[List[str]] = ["transaction", "stealthAddress", "ephemeralPublicKey", "viewTag", "commitment", "blindingFactor", "viewingKeyHash", "sharedSecret", "programId", "noteId", "instructionType", "encryptedAmount"]
 
     @field_validator('ephemeral_public_key')
     def ephemeral_public_key_validate_regular_expression(cls, value):
@@ -86,6 +90,16 @@ class TransferShield200ResponseData(BaseModel):
 
         if not re.match(r"^0x[0-9a-fA-F]{64}$", value):
             raise ValueError(r"must validate the regular expression /^0x[0-9a-fA-F]{64}$/")
+        return value
+
+    @field_validator('instruction_type')
+    def instruction_type_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in set(['anchor', 'system']):
+            raise ValueError("must be one of enum values ('anchor', 'system')")
         return value
 
     model_config = ConfigDict(
@@ -146,7 +160,11 @@ class TransferShield200ResponseData(BaseModel):
             "commitment": obj.get("commitment"),
             "blindingFactor": obj.get("blindingFactor"),
             "viewingKeyHash": obj.get("viewingKeyHash"),
-            "sharedSecret": obj.get("sharedSecret")
+            "sharedSecret": obj.get("sharedSecret"),
+            "programId": obj.get("programId"),
+            "noteId": obj.get("noteId"),
+            "instructionType": obj.get("instructionType"),
+            "encryptedAmount": obj.get("encryptedAmount")
         })
         return _obj
 
