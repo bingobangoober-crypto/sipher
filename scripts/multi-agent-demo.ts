@@ -263,7 +263,7 @@ async function main() {
   step('Bob', BOB, 'Check his privacy score post-transaction')
   endpoint('POST', '/v1/privacy/score')
   const bobScore = await api<Record<string, unknown>>('/v1/privacy/score', {
-    address: String(stealthAddr.address),
+    address: 'BobAgent7x9KpZmvVqLdi8eFbC3nJHqonvP4K7cWMfLX',
     limit: 10,
   })
   ok('Score', `${bobScore.score}/100 (${bobScore.grade})`)
@@ -317,7 +317,6 @@ async function main() {
   ok('Sender', String(decrypted.sender))
   ok('Recipient', truncate(String(decrypted.recipient)))
   ok('Amount', `${decrypted.amount} lamports (${Number(decrypted.amount) / 1e9} SOL)`)
-  ok('Memo', String(decrypted.memo))
   ok('Data Integrity', String(decrypted.sender === txData.sender))
   info('Auditor sees the full transaction — privacy + compliance coexist')
 
