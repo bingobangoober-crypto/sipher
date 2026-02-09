@@ -246,6 +246,7 @@ async function main() {
       chain: 'solana',
     },
     amount: String(TRANSFER_AMOUNT),
+    forceSystem: true,
   })
 
   ok('Stealth address', shield.stealthAddress)

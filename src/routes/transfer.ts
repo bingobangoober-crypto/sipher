@@ -34,6 +34,7 @@ const shieldSchema = z.object({
   }),
   amount: z.string().regex(/^[1-9]\d*$/, 'Must be a positive integer'),
   mint: z.string().min(32).max(44).optional(),
+  forceSystem: z.boolean().optional(),
 })
 
 const claimSchema = z.object({
@@ -54,7 +55,7 @@ router.post(
   validateRequest({ body: shieldSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { sender, recipientMetaAddress, amount, mint } = req.body
+      const { sender, recipientMetaAddress, amount, mint, forceSystem } = req.body
       const amountBigInt = BigInt(amount)
 
       // Build stealth address
@@ -86,6 +87,12 @@ router.post(
           sender,
           stealthAddress: stealthSolanaAddr,
           mint,
+          amount: amountBigInt,
+        })
+      } else if (forceSystem) {
+        transaction = await buildShieldedSolTransfer({
+          sender,
+          stealthAddress: stealthSolanaAddr,
           amount: amountBigInt,
         })
       } else {
