@@ -17,6 +17,7 @@ export const env = cleanEnv(process.env, {
   ADMIN_API_KEY: str({ default: '' }),
   REDIS_URL: str({ default: '' }),
   STRIPE_WEBHOOK_SECRET: str({ default: 'whsec_sipher_dev_secret' }),
+  JITO_BLOCK_ENGINE_URL: str({ default: '' }),
   CORS_ORIGINS: str({ default: '' }),
   RATE_LIMIT_MAX: num({ default: 100 }),
   RATE_LIMIT_WINDOW_MS: num({ default: 60000 }),

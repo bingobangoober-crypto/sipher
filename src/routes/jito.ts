@@ -4,9 +4,13 @@ import { validateRequest } from '../middleware/validation.js'
 import { idempotency } from '../middleware/idempotency.js'
 import { betaEndpoint, getBetaWarning } from '../middleware/beta.js'
 import { ErrorCode } from '../errors/codes.js'
-import { submitBundle, getBundleStatus } from '../services/jito-provider.js'
+import { submitBundle, getBundleStatus, isJitoLive } from '../services/jito-provider.js'
 
-const jitoBeta = betaEndpoint('Jito Gas Abstraction uses a mock block engine. Real Jito integration coming soon.')
+const jitoBeta = betaEndpoint(
+  isJitoLive()
+    ? 'Connected to Jito Block Engine. Bundle landing is best-effort.'
+    : 'Jito Gas Abstraction uses a mock block engine. Set JITO_BLOCK_ENGINE_URL to enable real bundles.'
+)
 
 const router = Router()
 
@@ -53,7 +57,7 @@ router.post(
         return
       }
 
-      const result = submitBundle({ transactions, tipLamports, gasSponsorship })
+      const result = await submitBundle({ transactions, tipLamports, gasSponsorship })
 
       res.json({
         success: true,
@@ -88,7 +92,7 @@ router.get(
         return
       }
 
-      const result = getBundleStatus(id)
+      const result = await getBundleStatus(id)
 
       if (!result) {
         res.status(404).json({

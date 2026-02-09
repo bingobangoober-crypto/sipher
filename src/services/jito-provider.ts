@@ -2,6 +2,7 @@ import { keccak_256 } from '@noble/hashes/sha3'
 import { bytesToHex } from '@noble/hashes/utils'
 import { LRUCache } from 'lru-cache'
 import { CACHE_MAX_DEFAULT, TWO_HOURS_MS } from '../constants.js'
+import { env } from '../config.js'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -67,6 +68,12 @@ const bundleCache = new LRUCache<string, BundleEntry>({
   ttl: TWO_HOURS_MS,
 })
 
+/** Maps our jito_ prefixed IDs to raw Jito hex IDs for real mode lookups */
+const realBundleIdMap = new LRUCache<string, string>({
+  max: CACHE_MAX_DEFAULT,
+  ttl: TWO_HOURS_MS,
+})
+
 // ─── State Machine Thresholds (ms) ─────────────────────────────────────────
 
 const STATUS_THRESHOLDS = {
@@ -101,9 +108,166 @@ export function getTipAccounts(): string[] {
   return [...JITO_TIP_ACCOUNTS]
 }
 
-// ─── Submit Bundle ──────────────────────────────────────────────────────────
+let jitoUrlOverride: string | null = null
 
-export function submitBundle(params: SubmitBundleParams): SubmitBundleResult {
+/** Returns true when JITO_BLOCK_ENGINE_URL is configured */
+export function isJitoLive(): boolean {
+  const url = jitoUrlOverride ?? env.JITO_BLOCK_ENGINE_URL
+  return url.length > 0
+}
+
+function getJitoUrl(): string {
+  return jitoUrlOverride ?? env.JITO_BLOCK_ENGINE_URL
+}
+
+// ─── Jito JSON-RPC Client ───────────────────────────────────────────────────
+
+interface JitoRpcResponse<T = unknown> {
+  jsonrpc: '2.0'
+  id: number
+  result?: T
+  error?: { code: number; message: string }
+}
+
+let rpcId = 0
+
+async function jitoRpc<T = unknown>(method: string, params: unknown[]): Promise<T> {
+  const url = getJitoUrl()
+  const body = JSON.stringify({
+    jsonrpc: '2.0',
+    id: ++rpcId,
+    method,
+    params,
+  })
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal: AbortSignal.timeout(10_000),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Jito RPC HTTP ${res.status}: ${res.statusText}`)
+  }
+
+  const json = (await res.json()) as JitoRpcResponse<T>
+  if (json.error) {
+    throw new Error(`Jito RPC error ${json.error.code}: ${json.error.message}`)
+  }
+
+  return json.result as T
+}
+
+// ─── Real Mode ──────────────────────────────────────────────────────────────
+
+async function realSubmitBundle(params: SubmitBundleParams): Promise<SubmitBundleResult> {
+  const { transactions, tipLamports = '10000', gasSponsorship = false } = params
+  const tipAccount = getRandomTipAccount()
+
+  // Jito sendBundle expects array of base64 tx strings
+  const rawBundleId = await jitoRpc<string>('sendBundle', [transactions])
+
+  const bundleId = 'jito_' + rawBundleId
+  realBundleIdMap.set(bundleId, rawBundleId)
+
+  return {
+    bundleId,
+    status: 'submitted',
+    tipAccount,
+    tipLamports,
+    gasSponsored: gasSponsorship,
+    slot: 0,
+    signature: '',
+    estimatedConfirmation: Date.now() + 3000,
+  }
+}
+
+interface JitoBundleStatusValue {
+  bundle_id: string
+  transactions: string[]
+  slot: number
+  confirmation_status: 'processed' | 'confirmed' | 'finalized'
+}
+
+interface JitoBundleStatusesResult {
+  context: { slot: number }
+  value: JitoBundleStatusValue[]
+}
+
+interface JitoInflightStatus {
+  bundle_id: string
+  status: 'Invalid' | 'Pending' | 'Failed' | 'Landed'
+  landed_slot?: number
+}
+
+async function realGetBundleStatus(id: string): Promise<BundleStatusResult | null> {
+  const rawId = realBundleIdMap.get(id)
+  if (!rawId) return null
+
+  // Try getBundleStatuses first (for landed bundles)
+  try {
+    const result = await jitoRpc<JitoBundleStatusesResult>('getBundleStatuses', [[rawId]])
+    if (result?.value?.length > 0) {
+      const entry = result.value[0]
+      const sig = entry.transactions?.[0] ?? ''
+      const slot = entry.slot ?? 0
+
+      let status: BundleStatus = 'submitted'
+      let progress = 0
+      if (entry.confirmation_status === 'processed') {
+        status = 'confirming'
+        progress = 66
+      } else if (entry.confirmation_status === 'confirmed' || entry.confirmation_status === 'finalized') {
+        status = 'confirmed'
+        progress = 100
+      }
+
+      const out: BundleStatusResult = { bundleId: id, status, progress, slot, signature: sig }
+      if (status === 'confirmed') out.confirmedAt = Date.now()
+      return out
+    }
+  } catch {
+    // Fall through to inflight check
+  }
+
+  // Fallback: getInflightBundleStatuses (for pending bundles)
+  try {
+    const inflight = await jitoRpc<JitoInflightStatus[]>('getInflightBundleStatuses', [[rawId]])
+    if (inflight?.length > 0) {
+      const entry = inflight[0]
+      let status: BundleStatus = 'submitted'
+      let progress = 0
+
+      if (entry.status === 'Pending') {
+        status = 'bundled'
+        progress = 33
+      } else if (entry.status === 'Landed') {
+        status = 'confirmed'
+        progress = 100
+      }
+      // Invalid / Failed stay as 'submitted' with progress 0
+
+      const out: BundleStatusResult = {
+        bundleId: id,
+        status,
+        progress,
+        slot: entry.landed_slot ?? 0,
+        signature: '',
+      }
+      if (status === 'confirmed') out.confirmedAt = Date.now()
+      return out
+    }
+  } catch {
+    // Both RPCs failed — return null (bundle not found)
+  }
+
+  return null
+}
+
+// ─── Mock Mode ──────────────────────────────────────────────────────────────
+
+function mockSubmitBundle(params: SubmitBundleParams): SubmitBundleResult {
   const { transactions, tipLamports = '10000', gasSponsorship = false } = params
 
   const now = Date.now()
@@ -137,9 +301,7 @@ export function submitBundle(params: SubmitBundleParams): SubmitBundleResult {
   }
 }
 
-// ─── Get Bundle Status ──────────────────────────────────────────────────────
-
-export function getBundleStatus(id: string): BundleStatusResult | null {
+function mockGetBundleStatus(id: string): BundleStatusResult | null {
   const entry = bundleCache.get(id)
   if (!entry) return null
 
@@ -161,10 +323,29 @@ export function getBundleStatus(id: string): BundleStatusResult | null {
   return result
 }
 
+// ─── Public API (dual-mode dispatch) ────────────────────────────────────────
+
+export async function submitBundle(params: SubmitBundleParams): Promise<SubmitBundleResult> {
+  if (isJitoLive()) return realSubmitBundle(params)
+  return mockSubmitBundle(params)
+}
+
+export async function getBundleStatus(id: string): Promise<BundleStatusResult | null> {
+  if (isJitoLive()) return realGetBundleStatus(id)
+  return mockGetBundleStatus(id)
+}
+
 // ─── Utility ────────────────────────────────────────────────────────────────
 
 export function resetJitoProvider(): void {
   bundleCache.clear()
+  realBundleIdMap.clear()
+  jitoUrlOverride = null
+}
+
+/** Test helper: override Jito Block Engine URL */
+export function _setJitoUrl(url: string | null): void {
+  jitoUrlOverride = url
 }
 
 /** Test helper: override submittedAt to control state machine */
