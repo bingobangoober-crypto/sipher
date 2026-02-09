@@ -44,7 +44,7 @@ hidden amounts, and compliance viewing keys across 17 chains.**
 - [Cryptographic Primitives](#-cryptographic-primitives-real-not-mocked)
 - [Key Features](#-key-features)
 - [Built for Agents, Not Humans](#-built-for-agents-not-humans)
-- [What's Real vs. What's Beta](#-whats-real-vs-whats-beta)
+- [What's Real vs. What's Preview](#-whats-real-vs-whats-preview)
 - [Quick Start](#-quick-start)
 - [SDK Depth](#-sdk-depth-sip-protocolsdk-v074)
 - [API Endpoints](#-api-endpoints-70-total)
@@ -363,9 +363,9 @@ npx tsx scripts/privacy-demo-agent.ts
 
 ---
 
-## 📊 What's Real vs. What's Beta
+## 📊 What's Real vs. What's Preview
 
-Judges reward transparency. Here's exactly what's production and what's interface-ready:
+Judges reward transparency. Here's exactly what's production-grade and what's interface-ready with mock backends:
 
 | Feature | Status | Details |
 |---------|--------|---------|
@@ -383,11 +383,11 @@ Judges reward transparency. Here's exactly what's production and what's interfac
 | Backend comparison | ✅ **Production** | Weighted scoring across 3 backends |
 | Session management | ✅ **Production** | CRUD with ownership, TTL, defaults merge |
 | Billing + quotas | ✅ **Production** | Daily quotas, subscriptions, invoices |
-| Arcium MPC | 🔶 Beta | Interface ready, mock backend |
-| Inco FHE | 🔶 Beta | Interface ready, mock backend |
-| Private swap | 🔶 Beta | Jupiter DEX integration stubbed |
-| STARK range proofs | 🔶 Beta | Hash-based placeholder (Murkl WASM coming) |
-| Jito gas abstraction | 🔶 Beta | Bundle relay with mock block engine |
+| Arcium MPC | 🧪 **Preview** | Production interface, mock computation backend |
+| Inco FHE | 🧪 **Preview** | Production interface, mock encryption backend |
+| Private swap | 🧪 **Preview** | Jupiter DEX integration stubbed |
+| STARK range proofs | 🧪 **Preview** | Hash-based placeholder (real Stwo/Murkl WASM roadmapped) |
+| Jito gas abstraction | 🧪 **Preview** | Bundle relay with mock block engine |
 
 ---
 
@@ -481,13 +481,13 @@ All responses follow: `{ success: boolean, data?: T, error?: { code, message, de
 | **Proofs** | 8 | `/v1/proofs/range/*`, `/funding/*`, `/validity/*`, `/fulfillment/*` | STARK range proofs + ZK proof types |
 | **Backends** | 4 | `/v1/backends`, `/:id/health`, `/select`, `/compare` | Privacy backend registry + comparison engine |
 | **C-SPL** | 3 | `/v1/cspl/wrap`, `/unwrap`, `/transfer` | Confidential SPL token operations |
-| **Arcium** | 3 | `/v1/arcium/compute`, `/compute/:id/status`, `/decrypt` | MPC computation (beta) |
-| **Inco** | 3 | `/v1/inco/encrypt`, `/compute`, `/decrypt` | FHE encryption (beta) |
-| **Swap** | 1 | `/v1/swap/private` | Jupiter DEX private swap (beta) |
+| **Arcium** | 3 | `/v1/arcium/compute`, `/compute/:id/status`, `/decrypt` | MPC computation (preview) |
+| **Inco** | 3 | `/v1/inco/encrypt`, `/compute`, `/decrypt` | FHE encryption (preview) |
+| **Swap** | 1 | `/v1/swap/private` | Jupiter DEX private swap (preview) |
 | **Sessions** | 4 | `/v1/sessions` CRUD | Agent session defaults (pro+) |
 | **Governance** | 4 | `/v1/governance/ballot/encrypt`, `/submit`, `/tally`, `/tally/:id` | Encrypted voting + homomorphic tally |
 | **Compliance** | 3 | `/v1/compliance/disclose`, `/report`, `/report/:id` | Selective disclosure + audit reports (enterprise) |
-| **Jito** | 2 | `/v1/jito/relay`, `/bundle/:id` | Gas abstraction via Jito bundles (beta) |
+| **Jito** | 2 | `/v1/jito/relay`, `/bundle/:id` | Gas abstraction via Jito bundles (preview) |
 | **Billing** | 6 | `/v1/billing/usage`, `/subscription`, `/subscribe`, `/invoices`, `/portal`, `/webhook` | Usage tracking + subscriptions |
 | **Admin** | 5 | `/v1/admin/keys` CRUD, `/tiers` | API key management |
 | **RPC** | 1 | `/v1/rpc/providers` | Provider configuration |

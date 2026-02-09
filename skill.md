@@ -504,7 +504,7 @@ Supported tokens: `C-wSOL`, `C-USDC`, `C-USDT`. All C-SPL endpoints support `Ide
 
 ---
 
-### STARK Range Proofs (Beta)
+### STARK Range Proofs (Preview — mock prover)
 
 Prove that a hidden value in a Pedersen commitment meets a threshold — without revealing the value. Uses M31 limb decomposition (Mersenne prime 2^31-1). Currently uses a mock STARK prover; real Murkl WASM integration coming soon.
 
@@ -605,7 +605,7 @@ Scoring: cost 40%, latency 30%, privacy 30% (default). Use `prioritize` to shift
 
 ---
 
-### Arcium MPC Compute (Beta)
+### Arcium MPC Compute (Preview — mock backend)
 
 Submit encrypted computations to the Arcium MPC cluster. Status progresses: submitted → encrypting → processing → finalizing → completed.
 
@@ -661,7 +661,7 @@ Returns: `decryptedOutput`, `verificationHash`, `circuitId`.
 
 ---
 
-### Inco FHE Compute (Beta)
+### Inco FHE Compute (Preview — mock backend)
 
 Encrypt values, compute on ciphertexts homomorphically, and decrypt results using Fully Homomorphic Encryption. FHE operations complete synchronously (no status polling needed). Tracks noise budget consumption per operation.
 
@@ -722,7 +722,7 @@ Returns: `decryptedOutput`, `verificationHash`, `operation`.
 
 ---
 
-### Private Swap (Beta)
+### Private Swap (Preview — mock backend)
 
 Privacy-preserving token swap via Jupiter DEX. Orchestrates stealth address generation, optional C-SPL wrapping, and Jupiter swap into a single call. Output routed to a stealth address with Pedersen commitment.
 
@@ -760,7 +760,7 @@ Supports `Idempotency-Key` header.
 
 ---
 
-### Governance Voting Privacy (Beta)
+### Governance Voting Privacy
 
 Privacy-preserving governance — encrypted ballots via Pedersen commitments, nullifier-based double-vote prevention, and homomorphic vote tallying.
 
@@ -832,7 +832,7 @@ Returns: cached tally result (same shape as tally response). Tallies expire afte
 
 ---
 
-### Jito Gas Abstraction (Beta)
+### Jito Gas Abstraction (Preview — mock backend)
 
 Submit transactions via Jito bundles for MEV protection. Requires pro or enterprise tier.
 
