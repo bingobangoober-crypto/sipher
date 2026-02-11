@@ -34,9 +34,7 @@ hidden amounts, and compliance viewing keys across 17 chains.**
 
 <div align="center">
 
-![Sipher Demo](assets/demo.gif)
-
-*[Watch in full quality (MP4)](assets/demo.mp4)*
+https://github.com/user-attachments/assets/a4a87b0c-7168-4677-b8e6-457debb98cb0
 
 </div>
 
